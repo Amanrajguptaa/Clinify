@@ -7,65 +7,10 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Doctor {
-  id             String       @id @default(uuid())
-  name           String
-  email          String       @unique
-  phoneNumber    String
-  specialization String
-  degree         String
-  experience     Int
-  fees           Float
-  about          String?
-  availableDays  Json
-  timeRangeId    String?      @unique
-  timeRange      TimeRange?   @relation(fields: [timeRangeId], references: [id])
-  appointments   Appointment[]
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-}
-
-model TimeRange {
-  id        String   @id @default(uuid())
-  startTime String
-  endTime   String
-  doctor    Doctor?
-}
-
-model Patient {
-  id          String         @id @default(uuid())
-  name        String
-  phoneNumber String
-  issue       String
-  address     String
-  age         Int
-  gender      String
-  appointments Appointment[]
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-}
-
-model Appointment {
-  id              String     @id @default(uuid())
-  doctorId        String
-  patientId       String
-  queueNumber     Int
-  appointmentDate DateTime   @default(now())
-  slot            String    
-  priority        Priority   @default(NORMAL)
-  status          AppointmentStatus @default(PENDING)
-  paymentStatus   PaymentStatus @default(UNPAID)
-
-  doctor          Doctor     @relation(fields: [doctorId], references: [id])
-  patient         Patient    @relation(fields: [patientId], references: [id])
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
-}
-
-enum Priority {
-  NORMAL
-  HIGH
+enum VisitType {
+  APPOINTMENT
   EMERGENCY
+  WALKIN
 }
 
 enum AppointmentStatus {
@@ -78,4 +23,57 @@ enum AppointmentStatus {
 enum PaymentStatus {
   PAID
   UNPAID
+}
+
+enum GenderType {
+  MALE
+  FEMALE
+  OTHER
+}
+
+model Doctor {
+  id             String     @id @default(uuid())
+  name           String
+  email          String     @unique
+  phoneNumber    String
+  specialization String
+  gender         GenderType
+  degree       String
+  experience   Int
+  fees         Float
+  about        String?
+  availability Json
+  appointments Appointment[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model Patient {
+  id           String        @id @default(uuid())
+  name         String
+  phoneNumber  String
+  issue        String
+  address      String
+  age          Int
+  gender       GenderType
+  appointments Appointment[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model Appointment {
+  id              String            @id @default(uuid())
+  doctorId        String
+  patientId       String
+  queueNumber     Int
+  appointmentDate DateTime          @default(now())
+  slot            String
+  visitType       VisitType         @default(APPOINTMENT)
+  status          AppointmentStatus @default(PENDING)
+  paymentStatus   PaymentStatus     @default(UNPAID)
+
+  doctor    Doctor   @relation(fields: [doctorId], references: [id])
+  patient   Patient  @relation(fields: [patientId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
