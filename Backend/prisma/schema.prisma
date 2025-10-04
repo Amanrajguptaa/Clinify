@@ -7,6 +7,18 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum GenderType {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum UserRole {
+  ADMIN
+  DOCTOR
+  STAFF
+}
+
 enum VisitType {
   APPOINTMENT
   EMERGENCY
@@ -25,28 +37,44 @@ enum PaymentStatus {
   UNPAID
 }
 
-enum GenderType {
-  MALE
-  FEMALE
-  OTHER
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  role      UserRole
+  doctor    Doctor?  @relation(fields: [doctorId], references: [id])
+  doctorId  String?  @unique
+  staff     Staff?   @relation(fields: [staffId], references: [id])
+  staffId   String?  @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Doctor {
-  id             String     @id @default(uuid())
+  id             String        @id @default(uuid())
   name           String
-  email          String     @unique
-  password       String
   phoneNumber    String
-  specialization String
   gender         GenderType
-  degree       String
-  experience   Int
-  fees         Float
-  about        String?
-  availability Json
-  appointments Appointment[]
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  specialization String
+  degree         String
+  experience     Int
+  fees           Float
+  about          String?
+  availability   Json
+  appointments   Appointment[]
+  user           User?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
+
+model Staff {
+  id          String     @id @default(uuid())
+  name        String
+  phoneNumber String
+  gender      GenderType
+  user        User?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 }
 
 model Patient {
