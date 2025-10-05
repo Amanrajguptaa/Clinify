@@ -3,6 +3,7 @@ import { NextFunction, Request, Response } from "express";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { findUserByIdAndRole } from "../services/user.service";
 import { prisma } from "../db/index";
+import bcrypt from "bcryptjs";
 
 const ACCESS_SECRET = process.env.ACCESS_SECRET;
 const REFRESH_SECRET = process.env.REFRESH_SECRET;
@@ -12,7 +13,7 @@ export const verifyAccessToken = (
   res: Response,
   next: NextFunction
 ) => {
-  const accessToken = req.cookies.accessToken;
+  const accessToken = req.cookies.clinifyAccessToken;
   if (!accessToken) return false;
   try {
     const decoded = jwt.verify(
@@ -33,7 +34,7 @@ export const verifyRefreshToken = async (
   res: Response,
   next: NextFunction
 ): Promise<boolean> => {
-  const refreshToken = req.cookies.refreshToken;
+  const refreshToken = req.cookies.clinifyRefreshToken;
 
   if (!refreshToken) return false;
   try {
@@ -112,4 +113,10 @@ export const generateRefreshToken = async (
     },
   });
   return refreshToken;
+};
+
+export const hashPassword = async (password: string): Promise<string> => {
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash(password, salt);
+  return hashedPassword;
 };

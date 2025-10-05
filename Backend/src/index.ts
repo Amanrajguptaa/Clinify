@@ -1,6 +1,7 @@
 import express from "express";
 import "dotenv/config";
 import authRouter from "./routes/auth.route";
+import doctorRouter from "./routes/doctor.route";
 
 const app = express();
 
@@ -19,3 +20,4 @@ app.get("/health", (req, res) => {
 });
 
 app.use("/api/auth", authRouter);
+app.use("/api/doctor", doctorRouter);
