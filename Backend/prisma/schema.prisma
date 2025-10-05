@@ -83,7 +83,7 @@ model Staff {
 model Patient {
   id           String        @id @default(uuid())
   name         String
-  phoneNumber  String
+  phoneNumber  String        @unique
   issue        String
   address      String
   age          Int
@@ -99,7 +99,7 @@ model Appointment {
   patientId       String
   queueNumber     Int
   appointmentDate DateTime          @default(now())
-  slot            String
+  slot            Json
   visitType       VisitType         @default(APPOINTMENT)
   status          AppointmentStatus @default(PENDING)
   paymentStatus   PaymentStatus     @default(UNPAID)
