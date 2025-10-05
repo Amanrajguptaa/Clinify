@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { NextFunction, Request, Response } from "express";
 import jwt, { JwtPayload } from "jsonwebtoken";
-import * as userService from "../services/user.service";
+import { findUserByIdAndRole } from "../services/user.service";
 import { prisma } from "../db/index";
 
 const ACCESS_SECRET = process.env.ACCESS_SECRET;
@@ -41,8 +41,8 @@ export const verifyRefreshToken = async (
       refreshToken,
       process.env.REFRESH_SECRET!
     ) as JwtPayload;
-    const { id, role, clinicId } = decoded;
-    const userData = await userService.findUserByIdAndRole(id, role);
+    const { id, role } = decoded;
+    const userData = await findUserByIdAndRole(id, role);
     if (
       !userData ||
       !userData.refreshToken ||
@@ -55,7 +55,7 @@ export const verifyRefreshToken = async (
     const accessToken = generateAccessToken(id, role);
     const isProduction = process.env.NODE_ENV === "production";
 
-    res.cookie("accessToken", accessToken, {
+    res.cookie("clinifyAccessToken", accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
@@ -65,7 +65,7 @@ export const verifyRefreshToken = async (
     next();
     return true;
   } catch (err) {
-    res.clearCookie("refreshToken", {
+    res.clearCookie("clinifyRefreshToken", {
       httpOnly: true,
       secure: process.env.NODE_ENV == "production",
       sameSite: "strict",
