@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { prisma } from "../db/index";
+import { sendAppointmentEmail } from "./email.controller";
 
 const timeToMinutes = (time: string) => {
   const [_, hours, minutes, meridiem] = time.match(/(\d+):(\d+)(AM|PM)/i) || [];
@@ -25,6 +26,7 @@ const scheduleAppointment = async (req: Request, res: Response) => {
       appointmentDate,
       visitType,
       patientName,
+      patientEmail,
       patientPhoneNumber,
       patientIssue,
       patientAddress,
@@ -51,6 +53,9 @@ const scheduleAppointment = async (req: Request, res: Response) => {
 
     const existingDoctor = await prisma.doctor.findUnique({
       where: { id: doctorId },
+      include: {
+        user: true,
+      },
     });
     if (!existingDoctor) {
       return res.status(404).json({ message: "Doctor not found" });
@@ -105,6 +110,7 @@ const scheduleAppointment = async (req: Request, res: Response) => {
       patient = await prisma.patient.create({
         data: {
           name: patientName,
+          email: patientEmail,
           phoneNumber: patientPhoneNumber,
           issue: patientIssue,
           address: patientAddress,
@@ -134,6 +140,25 @@ const scheduleAppointment = async (req: Request, res: Response) => {
       },
     });
 
+    try {
+      await sendAppointmentEmail(
+        {
+          body: {
+            to: [patientEmail, existingDoctor.user?.email],
+            doctorName: existingDoctor.name,
+            appointmentTime: `${slot} on ${new Date(
+              appointmentDate
+            ).toLocaleDateString()}`,
+            doctorImage: existingDoctor.image,
+            appointmentId: createAppointment.id,
+          },
+        } as Request,
+        {} as Response
+      );
+    } catch (emailError) {
+      console.error("Failed to send appointment email:", emailError);
+    }
+
     return res.status(201).json({
       message: "Appointment scheduled",
       appointment: createAppointment,
@@ -154,6 +179,7 @@ const editAppointment = async (req: Request, res: Response) => {
       status,
       paymentStatus,
       patientName,
+      patientEmail,
       patientPhoneNumber,
       patientIssue,
       patientAddress,
@@ -212,7 +238,8 @@ const editAppointment = async (req: Request, res: Response) => {
       if (!patient) {
         patient = await prisma.patient.create({
           data: {
-            name: patientName ?? "Unknown",
+            name: patientName,
+            email: patientEmail,
             phoneNumber: patientPhoneNumber,
             issue: patientIssue ?? "",
             address: patientAddress ?? "",
@@ -440,12 +467,10 @@ const getAllAppointments = async (req: Request, res: Response) => {
     });
 
     if (!appointments.length) {
-      return res
-        .status(200)
-        .json({
-          message: "No appointments found for this date",
-          appointments: [],
-        });
+      return res.status(200).json({
+        message: "No appointments found for this date",
+        appointments: [],
+      });
     }
 
     return res.status(200).json({ appointments });
