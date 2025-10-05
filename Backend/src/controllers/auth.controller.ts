@@ -8,14 +8,14 @@ export const login = async (req: Request, res: Response) => {
     loginData
   );
 
-  res.cookie("accessToken", accessToken, {
+  res.cookie("clinifyAccessToken", accessToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV == "production",
     sameSite: "strict",
     maxAge: 1000 * 60 * 15,
   });
 
-  res.cookie("refreshToken", refreshToken, {
+  res.cookie("clinifyRefreshToken", refreshToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV == "production",
     sameSite: "strict",
@@ -30,12 +30,12 @@ export const login = async (req: Request, res: Response) => {
 };
 
 export const logout = async (req: Request, res: Response) => {
-  res.clearCookie("accessToken", {
+  res.clearCookie("clinifyAccessToken", {
     httpOnly: true,
     secure: process.env.NODE_ENV == "production",
     sameSite: "strict",
   });
-  res.clearCookie("refreshToken", {
+  res.clearCookie("clinifyRefreshToken", {
     httpOnly: true,
     secure: process.env.NODE_ENV == "production",
     sameSite: "strict",

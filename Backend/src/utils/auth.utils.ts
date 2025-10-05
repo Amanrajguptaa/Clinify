@@ -20,7 +20,7 @@ export const verifyAccessToken = (
       process.env.ACCESS_SECRET!
     ) as JwtPayload;
     const { id, role } = decoded;
-    req.body = { id, role };
+    req.user = { id, role };
     next();
     return true;
   } catch (err) {
@@ -51,7 +51,7 @@ export const verifyRefreshToken = async (
       return false;
     }
 
-    req.body = { id, role, clinicId };
+    req.user = { id, role };
     const accessToken = generateAccessToken(id, role);
     const isProduction = process.env.NODE_ENV === "production";
 
