@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import DoctorCard from '../components/DoctorCard'
+import DoctorCard from '../../components/DoctorCard'
 
 const doctors = [
   {

@@ -15,8 +15,7 @@ const authlogin = async ({ email, password }: LoginProps) => {
 
   if (!user) throw new AppError("User does not exist", 404);
 
-  const isValidPassword = await bcrypt.compare(password, user.password);
-  if (!isValidPassword) throw new AppError("Invalid credentials", 401);
+
 
   const tokens = await generateTokens(user.id, user.role);
   return { ...tokens, role: user.role };

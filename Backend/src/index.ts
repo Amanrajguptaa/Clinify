@@ -1,5 +1,6 @@
 import express from "express";
 import "dotenv/config";
+import cors from "cors"
 import authRouter from "./routes/auth.route";
 import doctorRouter from "./routes/doctor.route";
 import appointmentRouter from "./routes/appointment.route";
@@ -9,6 +10,10 @@ const app = express();
 const port = process.env.PORT || 4000;
 
 app.use(express.json());
+app.use(cors({
+  origin: process.env.ORIGIN,
+  credentials: true
+}));
 
 app.listen(port, () => {
   console.log(`APP RUNNING ON PORT: ${port}`);
