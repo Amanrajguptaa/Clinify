@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { prisma } from "../db/index";
 import { hashPassword } from "../utils/auth.utils";
 import { Prisma } from "@prisma/client";
+import { v2 as cloudinary } from "cloudinary";
 
 const parseTime = (timeStr: string): Date => {
   const now = new Date();
@@ -36,6 +37,13 @@ const addDoctor = async (req: Request, res: Response) => {
       password,
     } = req.body;
 
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "Product image is required.",
+      });
+    }
+
     if (!name || !email || !password || !phoneNumber) {
       return res.status(400).json({
         success: false,
@@ -61,9 +69,14 @@ const addDoctor = async (req: Request, res: Response) => {
       });
     }
 
+    const result = await cloudinary.uploader.upload(req.file.path, {
+      resource_type: "image",
+    });
+
     const doctor = await prisma.doctor.create({
       data: {
         name,
+        image:result.secure_url,
         phoneNumber,
         gender,
         specialization,
@@ -193,6 +206,103 @@ const deleteDoctor = async (req: Request, res: Response) => {
   }
 };
 
+const getAllDoctors = async (req: Request, res: Response) => {
+  try {
+    const doctors = await prisma.doctor.findMany({
+      select: {
+        name: true,
+        phoneNumber: true,
+        specialization: true,
+        degree: true,
+        experience: true,
+        fees: true,
+        about: true,
+        isAvailable: true,
+        schedule: true,
+        createdAt: true,
+        updatedAt: true,
+        user: {
+          select: {
+            email: true,
+            role: true,
+            doctorId: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Doctors fetched successfully",
+      data: doctors,
+    });
+  } catch (error: any) {
+    console.error("Error fetching doctors:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
+const getDoctorById = async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  try {
+    const doctor = await prisma.doctor.findUnique({
+      where: { id },
+      select: {
+        name: true,
+        phoneNumber: true,
+        specialization: true,
+        degree: true,
+        experience: true,
+        fees: true,
+        about: true,
+        isAvailable: true,
+        schedule: true,
+        createdAt: true,
+        updatedAt: true,
+        user: {
+          select: {
+            email: true,
+            role: true,
+            doctorId: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
+      },
+    });
+
+    if (!doctor) {
+      return res.status(404).json({
+        success: false,
+        message: "Doctor not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Doctor fetched successfully",
+      data: doctor,
+    });
+  } catch (error: any) {
+    console.error("Error fetching doctor:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
 const changeAvailability = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -278,13 +388,11 @@ const getDoctorTodaySlots = async (req: Request, res: Response) => {
     }
 
     if (!doctor.isAvailable) {
-      return res
-        .status(200)
-        .json({
-          success: true,
-          message: "Doctor is not available today",
-          data: [],
-        });
+      return res.status(200).json({
+        success: true,
+        message: "Doctor is not available today",
+        data: [],
+      });
     }
 
     const days = [
@@ -330,4 +438,6 @@ export {
   changeAvailability,
   getAvailableDoctorsToday,
   getDoctorTodaySlots,
+  getAllDoctors,
+  getDoctorById,
 };
