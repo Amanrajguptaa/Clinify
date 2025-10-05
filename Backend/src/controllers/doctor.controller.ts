@@ -4,22 +4,6 @@ import { hashPassword } from "../utils/auth.utils";
 import { Prisma } from "@prisma/client";
 import { v2 as cloudinary } from "cloudinary";
 
-const parseTime = (timeStr: string): Date => {
-  const now = new Date();
-  const match = timeStr.match(/(\d+):(\d+)(AM|PM)/i);
-  if (!match) return now;
-  let [_, hourStr, minuteStr, period] = match;
-  let hour = parseInt(hourStr, 10);
-  const minute = parseInt(minuteStr, 10);
-
-  if (period.toUpperCase() === "PM" && hour !== 12) hour += 12;
-  if (period.toUpperCase() === "AM" && hour === 12) hour = 0;
-
-  const date = new Date(now);
-  date.setHours(hour, minute, 0, 0);
-  return date;
-};
-
 const addDoctor = async (req: Request, res: Response) => {
   try {
     const {
@@ -76,7 +60,7 @@ const addDoctor = async (req: Request, res: Response) => {
     const doctor = await prisma.doctor.create({
       data: {
         name,
-        image:result.secure_url,
+        image: result.secure_url,
         phoneNumber,
         gender,
         specialization,
@@ -376,9 +360,17 @@ const getAvailableDoctorsToday = async (req: Request, res: Response) => {
   }
 };
 
-const getDoctorTodaySlots = async (req: Request, res: Response) => {
+const getDoctorAvailableSlotsByDate = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const { date } = req.query;
+
+    if (!date) {
+      return res.status(400).json({
+        success: false,
+        message: "Date is required",
+      });
+    }
 
     const doctor = await prisma.doctor.findUnique({ where: { id } });
     if (!doctor) {
@@ -390,39 +382,60 @@ const getDoctorTodaySlots = async (req: Request, res: Response) => {
     if (!doctor.isAvailable) {
       return res.status(200).json({
         success: true,
-        message: "Doctor is not available today",
+        message: "Doctor is not available",
         data: [],
       });
     }
 
-    const days = [
-      "SUNDAY",
-      "MONDAY",
-      "TUESDAY",
-      "WEDNESDAY",
-      "THURSDAY",
-      "FRIDAY",
-      "SATURDAY",
-    ];
-    const todayDay = days[new Date().getDay()];
+    const givenDate = new Date(date as string);
+
+    const dayName = givenDate
+      .toLocaleDateString("en-US", { weekday: "long" })
+      .toUpperCase();
 
     const schedule = doctor.schedule as Record<string, string[]>;
-    const todaySlots = schedule[todayDay] || [];
+    const daySlots = schedule[dayName] || [];
 
-    const now = new Date();
-    const upcomingSlots = todaySlots.filter((slot) => {
-      const [start, end] = slot.split("-");
-      const startTime = parseTime(start.trim());
-      return startTime > now;
+    if (daySlots.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: `Doctor has no schedule for ${dayName}`,
+        data: [],
+      });
+    }
+
+    const startOfDay = new Date(givenDate);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(givenDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const bookedAppointments = await prisma.appointment.findMany({
+      where: {
+        doctorId: id,
+        appointmentDate: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+      },
+      select: { slot: true },
     });
+
+    const bookedSlots = bookedAppointments.map(
+      (appt) => (appt.slot as string) || ""
+    );
+
+    const availableSlots = daySlots.filter(
+      (slot) => !bookedSlots.includes(slot)
+    );
 
     return res.status(200).json({
       success: true,
-      message: `Doctor's available slots for ${todayDay}`,
-      data: upcomingSlots,
+      message: `Doctor's available slots for ${dayName} (${date})`,
+      data: availableSlots,
     });
   } catch (error: any) {
-    console.error("Error fetching today's slots:", error);
+    console.error("Error fetching available slots:", error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -437,7 +450,7 @@ export {
   deleteDoctor,
   changeAvailability,
   getAvailableDoctorsToday,
-  getDoctorTodaySlots,
+  getDoctorAvailableSlotsByDate,
   getAllDoctors,
   getDoctorById,
 };
