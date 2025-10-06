@@ -27,11 +27,11 @@ const DoctorCard: React.FC<DoctorCardProps> = ({
   };
 
   return (
-    <div className="w-42 md:w-64 bg-white rounded-2xl overflow-hidden shadow-md flex flex-col items-center border border-gray-400 relative">
+    <div className="w-42 md:w-80 bg-white rounded-2xl overflow-hidden shadow-md flex flex-col items-center border border-gray-400 relative">
       <img
         src={image}
         alt={name}
-        className="w-full h-32 md:h-48 object-cover bg-blue-100 pointer-events-none"
+        className="w-full h-32 md:h-64 object-cover bg-blue-100 pointer-events-none"
       />
 
       <div className="w-full bg-white p-3 flex flex-col items-start">

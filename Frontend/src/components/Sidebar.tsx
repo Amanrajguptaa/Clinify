@@ -29,11 +29,6 @@ const Sidebar: React.FC = () => {
       label: "Queue",
       icon: <UserCheck size={20} />,
     },
-    {
-      href: "/dashboard/staff/payment",
-      label: "Payments",
-      icon: <Wallet size={20} />,
-    },
   ];
 
   return (

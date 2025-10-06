@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { prisma } from "../db/index";
 import { sendAppointmentEmail } from "./email.controller";
+import { GenderType } from "@prisma/client";
 
 const timeToMinutes = (time: string) => {
   const [_, hours, minutes, meridiem] = time.match(/(\d+):(\d+)(AM|PM)/i) || [];
@@ -17,6 +18,27 @@ const isOverlap = (range1: string, range2: string) => {
   const [start2, end2] = range2.split("-").map(timeToMinutes);
   return Math.max(start1, start2) <= Math.min(end1, end2);
 };
+
+function getUTCRange(dateStr: string) {
+  const d = new Date(dateStr);
+
+  const startOfDay = new Date(
+    Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0, 0)
+  );
+  const endOfDay = new Date(
+    Date.UTC(
+      d.getUTCFullYear(),
+      d.getUTCMonth(),
+      d.getUTCDate(),
+      23,
+      59,
+      59,
+      999
+    )
+  );
+
+  return { startOfDay, endOfDay };
+}
 
 const scheduleAppointment = async (req: Request, res: Response) => {
   try {
@@ -114,8 +136,8 @@ const scheduleAppointment = async (req: Request, res: Response) => {
           phoneNumber: patientPhoneNumber,
           issue: patientIssue,
           address: patientAddress,
-          age: patientAge,
-          gender: patientGender,
+          age: Number(patientAge),
+          gender: patientGender.toUpperCase() as GenderType,
         },
       });
     }
@@ -166,6 +188,70 @@ const scheduleAppointment = async (req: Request, res: Response) => {
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Something went wrong", error });
+  }
+};
+
+const getAllDoctorAppointments = async (req: Request, res: Response) => {
+  try {
+    console.log("✅ getAllAppointment v2 is running!");
+
+    const { date } = req.query;
+    if (!date) {
+      return res.status(400).json({ message: "date is required" });
+    }
+
+    const d = new Date(date as string);
+
+    const { startOfDay, endOfDay } = getUTCRange(date as string);
+
+    const appointments = await prisma.appointment.findMany({
+      where: {
+        appointmentDate: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+      },
+      include: {
+        doctor: {
+          select: {
+            id: true,
+            name: true,
+            specialization: true,
+            degree: true,
+            fees: true,
+            image: true,
+            isAvailable: true,
+          },
+        },
+        patient: {
+          select: {
+            id: true,
+            name: true,
+            phoneNumber: true,
+            age: true,
+            gender: true,
+            issue: true,
+          },
+        },
+      },
+      orderBy: [{ doctorId: "asc" }, { queueNumber: "asc" }],
+    });
+
+    if (!appointments.length) {
+      return res.status(200).json({
+        success: true,
+        message: "No appointments found for this date",
+        data: [],
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: appointments,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Server error", error });
   }
 };
 
@@ -374,23 +460,6 @@ const deleteAppointment = async (req: Request, res: Response) => {
   }
 };
 
-const getAppointmentById = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const appointment = await prisma.appointment.findUnique({
-      where: { id },
-      include: { doctor: true, patient: true },
-    });
-    if (!appointment)
-      return res.status(404).json({ message: "Appointment not found" });
-
-    return res.status(200).json({ appointment });
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: "Server error", error });
-  }
-};
-
 const getDoctorAppointment = async (req: Request, res: Response) => {
   try {
     const doctorId = req.params.doctorId;
@@ -421,59 +490,17 @@ const getDoctorAppointment = async (req: Request, res: Response) => {
   }
 };
 
-const getAllAppointments = async (req: Request, res: Response) => {
+const getAppointmentById = async (req: Request, res: Response) => {
   try {
-    const { date } = req.body;
-
-    if (!date) {
-      return res.status(400).json({ message: "date is required" });
-    }
-
-    const d = new Date(date);
-    const startOfDay = new Date(d.setHours(0, 0, 0, 0));
-    const endOfDay = new Date(d.setHours(23, 59, 59, 999));
-
-    const appointments = await prisma.appointment.findMany({
-      where: {
-        appointmentDate: {
-          gte: startOfDay,
-          lte: endOfDay,
-        },
-      },
-      include: {
-        doctor: {
-          select: {
-            id: true,
-            name: true,
-            specialization: true,
-            degree: true,
-            fees: true,
-            image: true,
-            isAvailable: true,
-          },
-        },
-        patient: {
-          select: {
-            id: true,
-            name: true,
-            phoneNumber: true,
-            age: true,
-            gender: true,
-            issue: true,
-          },
-        },
-      },
-      orderBy: [{ doctorId: "asc" }, { queueNumber: "asc" }],
+    const { id } = req.params;
+    const appointment = await prisma.appointment.findUnique({
+      where: { id },
+      include: { doctor: true, patient: true },
     });
+    if (!appointment)
+      return res.status(404).json({ message: "Appointment not found" });
 
-    if (!appointments.length) {
-      return res.status(200).json({
-        message: "No appointments found for this date",
-        appointments: [],
-      });
-    }
-
-    return res.status(200).json({ appointments });
+    return res.status(200).json({ appointment });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Server error", error });
@@ -485,7 +512,7 @@ export {
   editAppointment,
   deleteAppointment,
   rescheduleAppointment,
-  getAllAppointments,
+  getAllDoctorAppointments,
   getAppointmentById,
   getDoctorAppointment,
 };

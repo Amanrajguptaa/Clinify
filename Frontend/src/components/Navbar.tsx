@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useContext } from "react";
+import React from "react";
 import { User } from "lucide-react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
@@ -9,6 +9,7 @@ const Navbar: React.FC = () => {
   const router = useRouter();
 
   const logoutHandler = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/logout`,
@@ -20,8 +21,8 @@ const Navbar: React.FC = () => {
       } else {
         console.error("Login failed:", response.data.message);
       }
-    } catch (err: any) {
-      console.error("Login error:", err.response?.data || err.message);
+    } catch (err: unknown) {
+      console.error("Login error");
     }
   };
 

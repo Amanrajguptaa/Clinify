@@ -16,7 +16,6 @@ const addDoctor = async (req: Request, res: Response) => {
       fees,
       about,
       schedule,
-      isAvailable,
       email,
       password,
     } = req.body;
@@ -24,7 +23,7 @@ const addDoctor = async (req: Request, res: Response) => {
     if (!req.file) {
       return res.status(400).json({
         success: false,
-        message: "Product image is required.",
+        message: "Doctor image is required.",
       });
     }
 
@@ -46,12 +45,18 @@ const addDoctor = async (req: Request, res: Response) => {
       });
     }
 
-    if (schedule && typeof schedule !== "object") {
-      return res.status(400).json({
-        success: false,
-        message: "Schedule must be a valid JSON object",
-      });
-    }
+   let parsedSchedule = {};
+if (req.body.schedule) {
+  try {
+    parsedSchedule = JSON.parse(req.body.schedule);
+  } catch (err) {
+    return res.status(400).json({
+      success: false,
+      message: "Schedule must be a valid JSON object",
+    });
+  }
+}
+
 
     const result = await cloudinary.uploader.upload(req.file.path, {
       resource_type: "image",
@@ -62,14 +67,13 @@ const addDoctor = async (req: Request, res: Response) => {
         name,
         image: result.secure_url,
         phoneNumber,
-        gender,
+        gender:gender.toUpperCase(),
         specialization,
         degree,
-        experience: Number(experience),
+       experience: Number(experience.replace(/\D/g, "")) || 0,
         fees: Number(fees),
         about,
-        schedule: schedule || {},
-        isAvailable: isAvailable ?? true,
+        schedule: parsedSchedule || {},
       },
     });
 
@@ -123,10 +127,20 @@ const editDoctor = async (req: Request, res: Response) => {
       });
     }
 
+   let imageUrl = existingDoctor.image; 
+
+    if (req.file) {
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        resource_type: "image",
+      });
+      imageUrl = result.secure_url; }
+
+
     const updatedDoctor = await prisma.doctor.update({
       where: { id },
       data: {
         name,
+        image:imageUrl,
         phoneNumber,
         gender,
         specialization,
@@ -182,51 +196,6 @@ const deleteDoctor = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error("Error deleting doctor:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Internal Server Error",
-      error: error.message,
-    });
-  }
-};
-
-const getAllDoctors = async (req: Request, res: Response) => {
-  try {
-    const doctors = await prisma.doctor.findMany({
-      select: {
-        name: true,
-        phoneNumber: true,
-        specialization: true,
-        degree: true,
-        experience: true,
-        fees: true,
-        about: true,
-        isAvailable: true,
-        schedule: true,
-        createdAt: true,
-        updatedAt: true,
-        user: {
-          select: {
-            email: true,
-            role: true,
-            doctorId: true,
-            createdAt: true,
-            updatedAt: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-
-    return res.status(200).json({
-      success: true,
-      message: "Doctors fetched successfully",
-      data: doctors,
-    });
-  } catch (error: any) {
-    console.error("Error fetching doctors:", error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -321,44 +290,6 @@ const changeAvailability = async (req: Request, res: Response) => {
   }
 };
 
-const getAvailableDoctorsToday = async (req: Request, res: Response) => {
-  try {
-    const today = new Date();
-    const days = [
-      "SUNDAY",
-      "MONDAY",
-      "TUESDAY",
-      "WEDNESDAY",
-      "THURSDAY",
-      "FRIDAY",
-      "SATURDAY",
-    ];
-    const todayDay = days[today.getDay()];
-
-    const doctors = await prisma.doctor.findMany({
-      where: {
-        isAvailable: true,
-        schedule: {
-          path: [todayDay],
-          not: Prisma.JsonNull,
-        },
-      },
-    });
-
-    return res.status(200).json({
-      success: true,
-      message: `Available doctors for ${todayDay}`,
-      data: doctors,
-    });
-  } catch (error: any) {
-    console.error("Error fetching available doctors:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Internal Server Error",
-      error: error.message,
-    });
-  }
-};
 
 const getDoctorAvailableSlotsByDate = async (req: Request, res: Response) => {
   try {
@@ -374,9 +305,7 @@ const getDoctorAvailableSlotsByDate = async (req: Request, res: Response) => {
 
     const doctor = await prisma.doctor.findUnique({ where: { id } });
     if (!doctor) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Doctor not found" });
+      return res.status(404).json({ success: false, message: "Doctor not found" });
     }
 
     if (!doctor.isAvailable) {
@@ -388,11 +317,17 @@ const getDoctorAvailableSlotsByDate = async (req: Request, res: Response) => {
     }
 
     const givenDate = new Date(date as string);
+    const today = new Date();
 
-    const dayName = givenDate
-      .toLocaleDateString("en-US", { weekday: "long" })
-      .toUpperCase();
+    // Validate date format
+    if (isNaN(givenDate.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid date format. Use ISO string (e.g., '2024-06-15').",
+      });
+    }
 
+    const dayName = givenDate.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase();
     const schedule = doctor.schedule as Record<string, string[]>;
     const daySlots = schedule[dayName] || [];
 
@@ -404,9 +339,32 @@ const getDoctorAvailableSlotsByDate = async (req: Request, res: Response) => {
       });
     }
 
+    // Helper: parse "09:00AM-12:00PM" → start time as Date object for comparison
+    const parseSlotStartTime = (slot: string): Date => {
+      const timePart = slot.split("-")[0].trim(); // e.g., "09:00AM"
+      const [time, modifier] = [timePart.slice(0, -2), timePart.slice(-2)]; // "09:00", "AM"
+      let [hours, minutes] = time.split(":").map(Number);
+
+      if (modifier === "PM" && hours !== 12) hours += 12;
+      if (modifier === "AM" && hours === 12) hours = 0;
+
+      const slotDate = new Date(givenDate);
+      slotDate.setHours(hours, minutes, 0, 0);
+      return slotDate;
+    };
+
+    // Filter out slots that are in the past (only if date is today)
+    let filteredSlots = daySlots;
+    if (givenDate.toDateString() === today.toDateString()) {
+      filteredSlots = daySlots.filter((slot) => {
+        const slotStart = parseSlotStartTime(slot);
+        return slotStart > today;
+      });
+    }
+
+    // Now check booked appointments
     const startOfDay = new Date(givenDate);
     startOfDay.setHours(0, 0, 0, 0);
-
     const endOfDay = new Date(givenDate);
     endOfDay.setHours(23, 59, 59, 999);
 
@@ -421,13 +379,9 @@ const getDoctorAvailableSlotsByDate = async (req: Request, res: Response) => {
       select: { slot: true },
     });
 
-    const bookedSlots = bookedAppointments.map(
-      (appt) => (appt.slot as string) || ""
-    );
+    const bookedSlots = bookedAppointments.map((appt) => (appt.slot as string) || "");
 
-    const availableSlots = daySlots.filter(
-      (slot) => !bookedSlots.includes(slot)
-    );
+    const availableSlots = filteredSlots.filter((slot) => !bookedSlots.includes(slot));
 
     return res.status(200).json({
       success: true,
@@ -444,12 +398,125 @@ const getDoctorAvailableSlotsByDate = async (req: Request, res: Response) => {
   }
 };
 
+const getAllDoctors = async (req: Request, res: Response) => {
+  try {
+      console.log("✅ getAllDoctors v2 is running!");
+
+    const doctors = await prisma.doctor.findMany({
+      select: {
+        id:true,
+        name: true,
+        image:true,
+        gender:true,
+        phoneNumber: true,
+        specialization: true,
+        degree: true,
+        experience: true,
+        fees: true,
+        about: true,
+        isAvailable: true,
+        schedule: true,
+        createdAt: true,
+        updatedAt: true,
+        user: {
+          select: {
+            email: true,
+            role: true,
+            doctorId: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    if (doctors.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: "No doctors available",
+        data: [],
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Doctors fetched successfully",
+      data: doctors,
+    });
+  } catch (error: any) {
+    console.error("Error fetching doctors:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
+const getAvailableDoctorsByDate = async (req: Request, res: Response) => {
+  try {
+    const { date } = req.query;
+
+    if (!date) {
+      return res.status(400).json({
+        success: false,
+        message: "Date query parameter is required",
+      });
+    }
+
+    const targetDate = new Date(date as string);
+    if (isNaN(targetDate.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid date format",
+      });
+    }
+
+    const days = [
+      "SUNDAY",
+      "MONDAY",
+      "TUESDAY",
+      "WEDNESDAY",
+      "THURSDAY",
+      "FRIDAY",
+      "SATURDAY",
+    ];
+    const dayOfWeek = days[targetDate.getDay()];
+
+    const doctors = await prisma.doctor.findMany({
+      where: {
+        isAvailable: true,
+        schedule: {
+          path: [dayOfWeek], 
+          not: Prisma.JsonNull,
+        },
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: `Available doctors for ${dayOfWeek} (${targetDate.toDateString()})`,
+      data: doctors,
+    });
+  } catch (error: any) {
+    console.error("Error fetching available doctors:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
 export {
   addDoctor,
   editDoctor,
   deleteDoctor,
   changeAvailability,
-  getAvailableDoctorsToday,
+  getAvailableDoctorsByDate,
   getDoctorAvailableSlotsByDate,
   getAllDoctors,
   getDoctorById,

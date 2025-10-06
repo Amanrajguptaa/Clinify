@@ -25,8 +25,8 @@ const StaffLogin: React.FC = () => {
       } else {
         console.error("Login failed:", response.data.message);
       }
-    } catch (err: any) {
-      console.error("Login error:", err.response?.data || err.message);
+    } catch (err: unknown) {
+      console.error("Login error");
     }
   };
 
