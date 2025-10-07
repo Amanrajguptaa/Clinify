@@ -3,9 +3,18 @@ import { prisma } from "../db/index";
 
 export const getAllDoctorsQueue = async (req: Request, res: Response) => {
   try {
-    const today = new Date();
-    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0);
-    const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+    const now = new Date();
+    
+    // Get UTC date components
+    const year = now.getUTCFullYear();
+    const month = now.getUTCMonth();
+    const date = now.getUTCDate();
+
+    // Create UTC start and end of day
+    const startOfDay = new Date(Date.UTC(year, month, date, 0, 0, 0));
+    const endOfDay = new Date(Date.UTC(year, month, date, 23, 59, 59, 999));
+
+    console.log("Querying appointments between:", startOfDay.toISOString(), "and", endOfDay.toISOString());
 
     const doctors = await prisma.doctor.findMany({
       orderBy: { name: "asc" },
