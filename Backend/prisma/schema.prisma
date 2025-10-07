@@ -27,7 +27,6 @@ enum VisitType {
 
 enum AppointmentStatus {
   PENDING
-  IN_PROGRESS
   COMPLETED
   CANCELLED
 }

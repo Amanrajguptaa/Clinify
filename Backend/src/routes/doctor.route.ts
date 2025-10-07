@@ -8,7 +8,7 @@ const doctorRouter = express.Router ();
 doctorRouter.post ('/add', authenticateUser, requiresRole(["STAFF"]), upload.single("image"),addDoctor)
 doctorRouter.put ('/edit/:id', authenticateUser, requiresRole(["STAFF"]),upload.single("image"),editDoctor)
 doctorRouter.get ('/all-doctors', authenticateUser, requiresRole(["STAFF"]),getAllDoctors)
-doctorRouter.delete ('/availability/:id', authenticateUser, requiresRole(["STAFF"]),changeAvailability)
+doctorRouter.put ('/availability/:id', authenticateUser, requiresRole(["STAFF"]),changeAvailability)
 doctorRouter.get ('/available', authenticateUser, requiresRole(["STAFF"]),getAvailableDoctorsByDate)
 doctorRouter.get ('/slots/:id', authenticateUser, requiresRole(["STAFF"]),getDoctorAvailableSlotsByDate)
 doctorRouter.delete ('/:id', authenticateUser, requiresRole(["STAFF"]),deleteDoctor)

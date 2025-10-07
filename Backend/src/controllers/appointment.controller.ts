@@ -1,22 +1,45 @@
 import { Request, Response } from "express";
 import { prisma } from "../db/index";
 import { sendAppointmentEmail } from "./email.controller";
-import { GenderType } from "@prisma/client";
+import { AppointmentStatus, GenderType } from "@prisma/client";
 
-const timeToMinutes = (time: string) => {
-  const [_, hours, minutes, meridiem] = time.match(/(\d+):(\d+)(AM|PM)/i) || [];
-  if (!hours || !minutes || !meridiem) return 0;
-  let h = parseInt(hours);
-  const m = parseInt(minutes);
-  if (meridiem.toUpperCase() === "PM" && h !== 12) h += 12;
-  if (meridiem.toUpperCase() === "AM" && h === 12) h = 0;
-  return h * 60 + m;
+const timeToMinutes = (time: string): number | null => {
+  const clean = time.trim().toUpperCase();
+  const match = clean.match(/^(\d{1,2})(?::(\d{2}))?(AM|PM)$/);
+  if (!match) {
+    console.error("Invalid time format:", time);
+    return null;
+  }
+
+  let hours = parseInt(match[1], 10);
+  const minutes = parseInt(match[2] || "0", 10);
+  const meridiem = match[3];
+
+  if (meridiem === "PM" && hours !== 12) hours += 12;
+  if (meridiem === "AM" && hours === 12) hours = 0;
+
+  return hours * 60 + minutes;
 };
 
-const isOverlap = (range1: string, range2: string) => {
-  const [start1, end1] = range1.split("-").map(timeToMinutes);
-  const [start2, end2] = range2.split("-").map(timeToMinutes);
-  return Math.max(start1, start2) <= Math.min(end1, end2);
+const isOverlap = (range1: string, range2: string): boolean => {
+  const clean1 = range1.replace(/\s/g, "").toUpperCase();
+  const clean2 = range2.replace(/\s/g, "").toUpperCase();
+
+  const parts1 = clean1.split("-");
+  const parts2 = clean2.split("-");
+
+  if (parts1.length !== 2 || parts2.length !== 2) return false;
+
+  const start1 = timeToMinutes(parts1[0]);
+  const end1 = timeToMinutes(parts1[1]);
+  const start2 = timeToMinutes(parts2[0]);
+  const end2 = timeToMinutes(parts2[1]);
+
+  if (start1 === null || end1 === null || start2 === null || end2 === null) {
+    return false;
+  }
+
+  return start1 < end2 && start2 < end1;
 };
 
 function getUTCRange(dateStr: string) {
@@ -79,38 +102,55 @@ const scheduleAppointment = async (req: Request, res: Response) => {
         user: true,
       },
     });
+
     if (!existingDoctor) {
       return res.status(404).json({ message: "Doctor not found" });
     }
 
     if (!existingDoctor.isAvailable) {
-      return res
-        .status(200)
-        .json({ message: "Doctor is currently not available" });
+      return res.status(200).json({ message: "Doctor is currently not available" });
     }
 
     const apptDate = new Date(appointmentDate);
-    const dayOfWeek = apptDate
-      .toLocaleDateString("en-US", { weekday: "long" })
-      .toUpperCase();
+    if (isNaN(apptDate.getTime())) {
+      return res.status(400).json({ message: "Invalid appointment date" });
+    }
 
-    const doctorSchedule: Record<string, string[]> =
-      existingDoctor.schedule as Record<string, string[]>;
-    const daySchedule = doctorSchedule[dayOfWeek] || [];
+    const dayKey = apptDate.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase();
+
+    // Normalize doctor schedule keys to uppercase to avoid casing issues
+    const rawSchedule = existingDoctor.schedule as Record<string, unknown>;
+    const normalizedSchedule: Record<string, string[]> = {};
+    for (const [key, value] of Object.entries(rawSchedule)) {
+      if (Array.isArray(value)) {
+        normalizedSchedule[key.toUpperCase()] = value.map(String);
+      }
+    }
+
+    const daySchedule = normalizedSchedule[dayKey] || [];
 
     const isSlotValid = daySchedule.some((range) => isOverlap(range, slot));
     if (!isSlotValid) {
+      console.log("Debug - Doctor schedule keys:", Object.keys(normalizedSchedule));
+      console.log("Debug - Requested day:", dayKey);
+      console.log("Debug - Available slots:", daySchedule);
+      console.log("Debug - Requested slot:", slot);
       return res.status(400).json({
         message: "Doctor is not available at the selected slot",
       });
     }
 
+    const startOfDay = new Date(apptDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(apptDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
     const existingAppointments = await prisma.appointment.findMany({
       where: {
         doctorId,
         appointmentDate: {
-          gte: new Date(apptDate.setHours(0, 0, 0, 0)),
-          lte: new Date(apptDate.setHours(23, 59, 59, 999)),
+          gte: startOfDay,
+          lte: endOfDay,
         },
       },
     });
@@ -119,9 +159,7 @@ const scheduleAppointment = async (req: Request, res: Response) => {
       isOverlap(appt.slot as string, slot)
     );
     if (isDoubleBooked) {
-      return res
-        .status(400)
-        .json({ message: "Selected slot is already booked" });
+      return res.status(400).json({ message: "Selected slot is already booked" });
     }
 
     let patient = await prisma.patient.findUnique({
@@ -174,7 +212,7 @@ const scheduleAppointment = async (req: Request, res: Response) => {
             doctorImage: existingDoctor.image,
             appointmentId: createAppointment.id,
           },
-        } as Request,
+        } as unknown as Request,
         {} as Response
       );
     } catch (emailError) {
@@ -186,8 +224,8 @@ const scheduleAppointment = async (req: Request, res: Response) => {
       appointment: createAppointment,
     });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: "Something went wrong", error });
+    console.error("Error in scheduleAppointment:", error);
+    return res.status(500).json({ message: "Something went wrong" });
   }
 };
 
@@ -507,6 +545,55 @@ const getAppointmentById = async (req: Request, res: Response) => {
   }
 };
 
+const changeAppointmentStatus = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const validStatuses: AppointmentStatus[] = ['PENDING', 'COMPLETED', 'CANCELLED'];
+    if (!status || !validStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or missing appointment status. Must be one of: PENDING, COMPLETED, CANCELLED',
+      });
+    }
+
+    const existingAppointment = await prisma.appointment.findUnique({
+      where: { id },
+    });
+
+    if (!existingAppointment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Appointment not found',
+      });
+    }
+    const updatedAppointment = await prisma.appointment.update({
+      where: { id },
+      data: { status },
+      select: {
+        id: true,
+        status: true,
+        doctor: { select: { name: true } },
+        patient: { select: { name: true } },
+        appointmentDate: true,
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Appointment status updated successfully',
+      data: updatedAppointment,
+    });
+  } catch (error) {
+    console.error('Error updating appointment status:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+    });
+  }
+};
+
 export {
   scheduleAppointment,
   editAppointment,
@@ -515,4 +602,5 @@ export {
   getAllDoctorAppointments,
   getAppointmentById,
   getDoctorAppointment,
+  changeAppointmentStatus
 };
