@@ -10,19 +10,19 @@ const Sidebar: React.FC = () => {
 
   const links = [
     {
-      href: "/dashboard/staff/stats",
+      href: "/dashboard/staff",
       label: "Dashboard",
       icon: <Home size={20} />,
-    },
-    {
-      href: "/dashboard/staff/appointments",
-      label: "Appointments",
-      icon: <Calendar size={20} />,
     },
     {
       href: "/dashboard/staff/doctor",
       label: " Doctors",
       icon: <Stethoscope size={20} />,
+    },
+    {
+      href: "/dashboard/staff/appointments",
+      label: "Appointments",
+      icon: <Calendar size={20} />,
     },
     {
       href: "/dashboard/staff/queue",
@@ -36,7 +36,7 @@ const Sidebar: React.FC = () => {
       className="w-56 h-full py-8 pt-24 px-4 bg-white border-r border-gray-200 fixed shadow-sm"
       style={{ fontFamily: "'Inter', system-ui, sans-serif" }}
     >
-      {/* Navigation Links */}
+
       <nav className="flex flex-col gap-1.5">
         {links.map((link) => {
           const isActive = pathname === link.href;
