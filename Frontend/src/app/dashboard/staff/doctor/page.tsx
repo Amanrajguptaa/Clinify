@@ -88,7 +88,7 @@ const Page = () => {
 
   useEffect(() => {
     fetchDoctors();
-  }, [fetchDoctors]);
+  }, []);
 
   const filteredDoctors = doctors.filter((doctor) => {
     const matchesSearch = doctor.name
@@ -113,6 +113,8 @@ const Page = () => {
   };
 
   const addDoctor = async () => {
+  console.log("🚨 addDoctor CALLED at step:", step);
+  console.trace(); // Shows call stack
     if (!formData.image && !editingDoctor) {
       return toast.error("Image not selected");
     }
@@ -191,6 +193,7 @@ const Page = () => {
   };
 
   const editDoctor = async (id: string) => {
+    console.log("🚨 editDoctor CALLED!");
     if (!formData.image && !editingDoctor) {
       return toast.error("Image not selected");
     }
@@ -309,15 +312,25 @@ const Page = () => {
 
   // Handle submit
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateForm()) return; // stop submission if errors exist
+  console.log("🟢 handleSubmit called at step:", step);
+  e.preventDefault();
 
-    if (editingDoctor) {
-      await editDoctor(editingDoctor.id);
-    } else {
-      await addDoctor();
-    }
-  };
+  if (step !== 3) {
+    console.warn("🛑 handleSubmit blocked: Not on final step");
+    return;
+  }
+
+  if (!validateForm()) {
+    console.log("❌ Validation failed");
+    return;
+  }
+
+  if (editingDoctor) {
+    await editDoctor(editingDoctor.id);
+  } else {
+    await addDoctor();
+  }
+};
 
   // Reset form when closing modal
   const handleCloseModal = () => {
@@ -406,6 +419,7 @@ const Page = () => {
             </select>
 
             <button
+              type="button"
               onClick={() => {
                 setShowModal(true);
                 setStep(1);
@@ -509,6 +523,7 @@ const Page = () => {
 
             {!search && filter === "all" && (
               <button
+                type="button"
                 onClick={() => {
                   setShowModal(true);
                   setEditingDoctor(null);
@@ -540,6 +555,7 @@ const Page = () => {
                 onClick={(e) => e.stopPropagation()}
               >
                 <button
+                  type="button"
                   onClick={handleCloseModal}
                   className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 transition-colors"
                 >
@@ -550,7 +566,10 @@ const Page = () => {
                   {editingDoctor ? `Edit Doctor` : `Add New Doctor`}
                 </h2>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <div
+                 
+                  className="space-y-6"
+                >
                   {step === 1 && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="md:col-span-2">
@@ -779,7 +798,6 @@ const Page = () => {
                       </div>
                     </div>
                   )}
-
                   {step === 2 && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
@@ -876,7 +894,6 @@ const Page = () => {
                       </div>
                     </div>
                   )}
-
                   {step === 3 && (
                     <div className="space-y-6">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -950,9 +967,8 @@ const Page = () => {
                       </div>
                     </div>
                   )}
-
                   {/* Step Navigation */}
-                  <div className="flex justify-between pt-4">
+\                  <div className="flex justify-between pt-4">
                     {step > 1 && (
                       <button
                         type="button"
@@ -966,14 +982,93 @@ const Page = () => {
                     {step < 3 ? (
                       <button
                         type="button"
-                        onClick={() => setStep(step + 1)}
+                        onClick={() => {
+                          // Only validate required fields for current step
+                          let isValid = true;
+                          const newErrors: Record<string, string> = {
+                            ...errors,
+                          };
+
+                          if (step === 1) {
+                            // Validate step 1 fields
+                            if (!formData.name.trim()) {
+                              newErrors.name = "Full name is required";
+                              isValid = false;
+                            }
+                            if (
+                              !formData.phoneNumber.trim() ||
+                              !/^\d{10}$/.test(formData.phoneNumber)
+                            ) {
+                              newErrors.phoneNumber =
+                                !formData.phoneNumber.trim()
+                                  ? "Phone number is required"
+                                  : "Phone number must be 10 digits";
+                              isValid = false;
+                            }
+                            if (!formData.gender.trim()) {
+                              newErrors.gender = "Gender is required";
+                              isValid = false;
+                            }
+                            if (!formData.specialty.trim()) {
+                              newErrors.specialty =
+                                "Specialization is required";
+                              isValid = false;
+                            }
+                            if (!formData.degree.trim()) {
+                              newErrors.degree = "Degree is required";
+                              isValid = false;
+                            }
+                            if (!formData.experience.trim()) {
+                              newErrors.experience = "Experience is required";
+                              isValid = false;
+                            }
+                            if (!formData.image && !editingDoctor) {
+                              newErrors.image = "Profile image is required";
+                              isValid = false;
+                            }
+                          } else if (step === 2) {
+                            // Validate step 2 fields
+                            if (!formData.fees.trim()) {
+                              newErrors.fees = "Consultation fees required";
+                              isValid = false;
+                            }
+                            if (
+                              !formData.email.trim() ||
+                              !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(
+                                formData.email
+                              )
+                            ) {
+                              newErrors.email = !formData.email.trim()
+                                ? "Email is required"
+                                : "Invalid email address";
+                              isValid = false;
+                            }
+                            if (!editingDoctor && !formData.password.trim()) {
+                              newErrors.password = "Password is required";
+                              isValid = false;
+                            }
+                            if (!formData.about.trim()) {
+                              newErrors.about = "About is required";
+                              isValid = false;
+                            }
+                          }
+
+                          setErrors(newErrors);
+
+                          if (isValid) {
+                            setStep(step + 1);
+                          }
+                        }}
                         className="ml-auto flex items-center gap-2 bg-teal-600 text-white px-6 py-2.5 rounded-xl hover:bg-teal-700 transition"
                       >
                         Next <ArrowRight size={20} />
                       </button>
                     ) : (
                       <button
-                        type="submit"
+                       onClick={(e) => {
+  e.preventDefault(); // prevent form submission if inside <form>
+  handleSubmit(e as unknown as React.FormEvent); // or better: don't use form
+}}
                         disabled={isSubmitting}
                         className={`ml-auto px-6 py-2.5 rounded-xl font-medium transition ${
                           isSubmitting
@@ -994,7 +1089,7 @@ const Page = () => {
                       </button>
                     )}
                   </div>
-                </form>
+                </div>
               </motion.div>
             </motion.div>
           )}

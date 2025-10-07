@@ -15,7 +15,6 @@ const addDoctor = async (req: Request, res: Response) => {
       experience,
       fees,
       about,
-      schedule,
       email,
       password,
     } = req.body;
@@ -339,10 +338,9 @@ const getDoctorAvailableSlotsByDate = async (req: Request, res: Response) => {
       });
     }
 
-    // Helper: parse "09:00AM-12:00PM" → start time as Date object for comparison
     const parseSlotStartTime = (slot: string): Date => {
-      const timePart = slot.split("-")[0].trim(); // e.g., "09:00AM"
-      const [time, modifier] = [timePart.slice(0, -2), timePart.slice(-2)]; // "09:00", "AM"
+      const timePart = slot.split("-")[0].trim();
+      const [time, modifier] = [timePart.slice(0, -2), timePart.slice(-2)];
       let [hours, minutes] = time.split(":").map(Number);
 
       if (modifier === "PM" && hours !== 12) hours += 12;
@@ -353,7 +351,6 @@ const getDoctorAvailableSlotsByDate = async (req: Request, res: Response) => {
       return slotDate;
     };
 
-    // Filter out slots that are in the past (only if date is today)
     let filteredSlots = daySlots;
     if (givenDate.toDateString() === today.toDateString()) {
       filteredSlots = daySlots.filter((slot) => {
@@ -362,7 +359,6 @@ const getDoctorAvailableSlotsByDate = async (req: Request, res: Response) => {
       });
     }
 
-    // Now check booked appointments
     const startOfDay = new Date(givenDate);
     startOfDay.setHours(0, 0, 0, 0);
     const endOfDay = new Date(givenDate);
@@ -400,7 +396,6 @@ const getDoctorAvailableSlotsByDate = async (req: Request, res: Response) => {
 
 const getAllDoctors = async (req: Request, res: Response) => {
   try {
-      console.log("✅ getAllDoctors v2 is running!");
 
     const doctors = await prisma.doctor.findMany({
       select: {
