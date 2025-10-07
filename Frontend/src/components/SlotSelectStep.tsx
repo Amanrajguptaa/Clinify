@@ -74,7 +74,14 @@ const SlotSelectStep: React.FC<Props> = ({ doctor, onNext, onBack, date }) => {
         const response = await axios.get(
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/doctor/slots/${doctor.id}`,
           {
-            params: { date: date.toISOString() },
+            params: {
+              date:
+                date.getFullYear() +
+                "-" +
+                String(date.getMonth() + 1).padStart(2, "0") +
+                "-" +
+                String(date.getDate()).padStart(2, "0"),
+            },
             withCredentials: true,
           }
         );

@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import axios from "axios";
+import { ArrowLeft } from "lucide-react"; 
 
 interface Props {
   doctor: { id: string; name: string };
@@ -26,88 +27,166 @@ const PatientFormStep: React.FC<Props> = ({
     phone: "",
     age: "",
     gender: "Not Selected",
-    visitType: "APPOINTMENT",
+    visitType: "APPOINTMENT" as const,
     issue: "",
     address: "",
   });
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-const handleSubmit = async () => {
-  try {
-    await axios.post(
-      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/appointment/schedule`,
-      {
-        doctorId: doctor.id,
-        slot,
-        appointmentDate: date,
-        visitType: form.visitType,
-        patientName: form.name,
-        patientEmail: form.email,
-        patientPhoneNumber: form.phone,
-        patientIssue: form.issue,
-        patientAddress: form.address,
-        patientAge: form.age,
-        patientGender: form.gender,
-      },{withCredentials:true}
-    );
-    onClose();
-  } catch (error: unknown) {
-    console.error("Failed to schedule appointment",error);
-  }
-};
+  const handleSubmit = async () => {
+    if (
+      !form.name ||
+      !form.email ||
+      !form.phone ||
+      !form.age ||
+      form.gender === "Not Selected"
+    ) {
+      return;
+    }
 
+    setIsSubmitting(true);
+    try {
+    
+ const scheduleDate= date.getFullYear() + '-' +
+        String(date.getMonth() + 1).padStart(2, '0') + '-' +
+        String(date.getDate()).padStart(2, '0')
+      await axios.post(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/appointment/schedule`,
+        {
+          doctorId: doctor.id,
+          slot,
+          appointmentDate: scheduleDate, 
+          visitType: form.visitType,
+          patientName: form.name,
+          patientEmail: form.email,
+          patientPhoneNumber: form.phone,
+          patientIssue: form.issue,
+          patientAddress: form.address,
+          patientAge: form.age,
+          patientGender: form.gender,
+        },
+        { withCredentials: true }
+      );
+      onClose();
+    } catch (error) {
+      console.error("Failed to schedule appointment", error);
+      // Consider showing user-friendly error (e.g., toast)
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
+  const isStep1Valid =
+    form.name.trim() &&
+    form.email.trim() &&
+    form.phone.trim() &&
+    form.age.trim() &&
+    form.gender !== "Not Selected";
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {step === 1 ? (
         <>
-          <h2 className="text-lg font-semibold">Patient Details</h2>
-          <div className="space-y-3">
-            <input
-              type="text"
-              placeholder="Full Name"
-              className="w-full border rounded-md p-2"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-            />
-            <input
-              type="email"
-              placeholder="Email"
-              className="w-full border rounded-md p-2"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-            />
-            <input
-              type="tel"
-              placeholder="Phone Number"
-              className="w-full border rounded-md p-2"
-              value={form.phone}
-              onChange={(e) => setForm({ ...form, phone: e.target.value })}
-            />
-            <input
-              type="number"
-              placeholder="Age"
-              className="w-full border rounded-md p-2"
-              value={form.age}
-              onChange={(e) => setForm({ ...form, age: e.target.value })}
-            />
-            <select
-              className="w-full border rounded-md p-2"
-              value={form.gender}
-              onChange={(e) => setForm({ ...form, gender: e.target.value })}
-            >
-              <option value="Not Selected">Select Gender</option>
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-              <option value="Other">Other</option>
-            </select>
+          <div>
+            <h2 className="text-xl font-bold text-blue-600">Patient Details</h2>
+            <p className="text-sm text-gray-500 mt-1">
+              Please provide the patient's basic information
+            </p>
           </div>
-          <div className="flex justify-between pt-3">
-            <button onClick={onBack}>Back</button>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                Full Name
+              </label>
+              <input
+                type="text"
+                placeholder="Enter full name"
+                className="w-full border border-gray-300 px-3 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                Email Address
+              </label>
+              <input
+                type="email"
+                placeholder="patient@example.com"
+                className="w-full border border-gray-300 px-3 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                Phone Number
+              </label>
+              <input
+                type="tel"
+                placeholder="Enter phone number"
+                className="w-full border border-gray-300 px-3 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  Age
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="120"
+                  placeholder="e.g. 30"
+                  className="w-full border border-gray-300 px-3 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
+                  value={form.age}
+                  onChange={(e) => setForm({ ...form, age: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  Gender
+                </label>
+                <select
+                  className="w-full border border-gray-300 px-3 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
+                  value={form.gender}
+                  onChange={(e) => setForm({ ...form, gender: e.target.value })}
+                >
+                  <option value="Not Selected">Select Gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-between pt-4 border-t border-blue-100">
             <button
-              disabled={!form.name || !form.email || !form.phone || !form.age}
+              type="button"
+              onClick={onBack}
+              className="flex items-center gap-1.5 text-gray-700 hover:text-gray-900 font-semibold px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors text-sm"
+            >
+              <ArrowLeft size={16} />
+              Back
+            </button>
+            <button
+              type="button"
               onClick={() => setStep(2)}
+              disabled={!isStep1Valid}
+              className={`px-5 py-2.5 rounded-lg font-semibold text-sm transition-all ${
+                isStep1Valid
+                  ? "bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.98]"
+                  : "bg-gray-200 text-gray-400 cursor-not-allowed"
+              }`}
             >
               Next
             </button>
@@ -115,34 +194,86 @@ const handleSubmit = async () => {
         </>
       ) : (
         <>
-          <h2 className="text-lg font-semibold">Visit Details</h2>
-          <div className="space-y-3">
-            <select
-              className="w-full border rounded-md p-2"
-              value={form.visitType}
-              onChange={(e) => setForm({ ...form, visitType: e.target.value })}
-            >
-              <option value="APPOINTMENT">Appointment</option>
-              <option value="WALKIN">Walkin</option>
-
-              <option value="EMERGENCY">Emergency</option>
-            </select>
-            <textarea
-              placeholder="Issue / Symptoms"
-              className="w-full border rounded-md p-2"
-              value={form.issue}
-              onChange={(e) => setForm({ ...form, issue: e.target.value })}
-            />
-            <textarea
-              placeholder="Address"
-              className="w-full border rounded-md p-2"
-              value={form.address}
-              onChange={(e) => setForm({ ...form, address: e.target.value })}
-            />
+          <div>
+            <h2 className="text-xl font-bold text-blue-600">Visit Details</h2>
+            <p className="text-sm text-gray-500 mt-1">
+              Tell us more about the reason for the visit
+            </p>
           </div>
-          <div className="flex justify-between pt-3">
-            <button onClick={() => setStep(1)}>Back</button>
-            <button onClick={handleSubmit}>Confirm</button>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                Visit Type
+              </label>
+              <select
+                className="w-full border border-gray-300 px-3 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
+                value={form.visitType}
+                onChange={(e) =>
+                  setForm({ ...form, visitType: e.target.value as any })
+                }
+              >
+                <option value="APPOINTMENT">Appointment</option>
+                <option value="WALKIN">Walk-in</option>
+                <option value="EMERGENCY">Emergency</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                Issue / Symptoms
+              </label>
+              <textarea
+                placeholder="Describe the main concern or symptoms..."
+                rows={3}
+                className="w-full border border-gray-300 px-3 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
+                value={form.issue}
+                onChange={(e) => setForm({ ...form, issue: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                Address
+              </label>
+              <textarea
+                placeholder="Patient's full address..."
+                rows={2}
+                className="w-full border border-gray-300 px-3 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
+                value={form.address}
+                onChange={(e) => setForm({ ...form, address: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-between pt-4 border-t border-blue-100">
+            <button
+              type="button"
+              onClick={() => setStep(1)}
+              className="flex items-center gap-1.5 text-gray-700 hover:text-gray-900 font-semibold px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors text-sm"
+            >
+              <ArrowLeft size={16} />
+              Back
+            </button>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              className={`px-5 py-2.5 rounded-lg font-semibold text-sm transition-all flex items-center gap-2 ${
+                isSubmitting
+                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  : "bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.98]"
+              }`}
+            >
+              {isSubmitting ? (
+                <>
+                  <span className="h-4 w-4 border-t-2 border-white rounded-full animate-spin"></span>
+                  Scheduling...
+                </>
+              ) : (
+                "Confirm Appointment"
+              )}
+            </button>
           </div>
         </>
       )}

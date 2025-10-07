@@ -113,8 +113,8 @@ const Page = () => {
   };
 
   const addDoctor = async () => {
-  console.log("🚨 addDoctor CALLED at step:", step);
-  console.trace(); // Shows call stack
+    console.log("🚨 addDoctor CALLED at step:", step);
+    console.trace(); // Shows call stack
     if (!formData.image && !editingDoctor) {
       return toast.error("Image not selected");
     }
@@ -144,8 +144,9 @@ const Page = () => {
       fd.append("phoneNumber", formData.phoneNumber);
       fd.append("gender", formData.gender.toUpperCase());
 
+      let response;
 
-      const response = await axios.post(
+      response = await axios.post(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/doctor/add`,
         fd,
         { withCredentials: true }
@@ -311,25 +312,25 @@ const Page = () => {
 
   // Handle submit
   const handleSubmit = async (e: React.FormEvent) => {
-  console.log("🟢 handleSubmit called at step:", step);
-  e.preventDefault();
+    console.log("🟢 handleSubmit called at step:", step);
+    e.preventDefault();
 
-  if (step !== 3) {
-    console.warn("🛑 handleSubmit blocked: Not on final step");
-    return;
-  }
+    if (step !== 3) {
+      console.warn("🛑 handleSubmit blocked: Not on final step");
+      return;
+    }
 
-  if (!validateForm()) {
-    console.log("❌ Validation failed");
-    return;
-  }
+    if (!validateForm()) {
+      console.log("❌ Validation failed");
+      return;
+    }
 
-  if (editingDoctor) {
-    await editDoctor(editingDoctor.id);
-  } else {
-    await addDoctor();
-  }
-};
+    if (editingDoctor) {
+      await editDoctor(editingDoctor.id);
+    } else {
+      await addDoctor();
+    }
+  };
 
   // Reset form when closing modal
   const handleCloseModal = () => {
@@ -402,7 +403,7 @@ const Page = () => {
               placeholder="Search doctors..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border text-black border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent shadow-sm"
+              className="w-full pl-10 pr-4 py-3 border text-black border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
             />
           </div>
 
@@ -410,7 +411,7 @@ const Page = () => {
             <select
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              className="px-4 py-3 border text-black border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent shadow-sm min-w-[180px]"
+              className="px-4 py-3 border text-black border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm min-w-[180px]"
             >
               <option value="all">All Doctors</option>
               <option value="available">Available</option>
@@ -423,7 +424,7 @@ const Page = () => {
                 setShowModal(true);
                 setStep(1);
               }}
-              className="flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white px-5 py-3 rounded-xl shadow-md transition-all duration-200 hover:shadow-lg"
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-md shadow-md transition-all duration-200 hover:shadow-lg"
             >
               <Plus size={20} /> Add Doctor
             </button>
@@ -440,6 +441,7 @@ const Page = () => {
             {filteredDoctors.map((doctor) => (
               <DoctorCard
                 key={doctor.id}
+                id={doctor.id}
                 name={doctor.name}
                 specialization={doctor.specialization}
                 fees={doctor.fees}
@@ -478,7 +480,7 @@ const Page = () => {
                   setStep(1);
                   setShowModal(true);
                 }}
-                onDelete={() => alert(`Delete ${doctor.name}`)}
+                onDeleteSuccess={fetchDoctors}
               />
             ))}
           </div>
@@ -486,7 +488,7 @@ const Page = () => {
           <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
             {/* Avatar-style illustration */}
             <div className="relative mb-5">
-              <div className="bg-gradient-to-br from-blue-50 to-teal-50 border-2 border-blue-100 rounded-full w-16 h-16 flex items-center justify-center">
+              <div className="bg-gradient-to-br from-blue-50 to-blue-50 border-2 border-blue-100 rounded-full w-16 h-16 flex items-center justify-center">
                 <svg
                   className="text-gray-500"
                   fill="none"
@@ -504,7 +506,7 @@ const Page = () => {
                   />
                 </svg>
               </div>
-              <div className="absolute -bottom-1 -right-1 bg-teal-500 rounded-full p-1 shadow-sm">
+              <div className="absolute -bottom-1 -right-1 bg-blue-500 rounded-full p-1 shadow-sm">
                 <Plus className="text-white" size={14} />
               </div>
             </div>
@@ -528,7 +530,7 @@ const Page = () => {
                   setEditingDoctor(null);
                   setStep(1);
                 }}
-                className="mt-5 flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 transform hover:-translate-y-0.5"
+                className="mt-5 flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 transform hover:-translate-y-0.5"
               >
                 <Plus size={18} /> Add Doctor
               </button>
@@ -540,553 +542,635 @@ const Page = () => {
         <AnimatePresence>
           {showModal && (
             <motion.div
-              className="fixed inset-0 bg-black/90 bg-opacity-50 flex items-center justify-center z-50 p-4"
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={handleCloseModal}
             >
               <motion.div
-                className="bg-white w-full max-w-4xl rounded-2xl shadow-xl p-6 relative max-h-[90vh] overflow-y-auto"
+                className="bg-white w-full max-w-4xl rounded-lg shadow-xl relative max-h-[90vh] overflow-hidden border-2 border-blue-200"
                 initial={{ scale: 0.95, opacity: 0, y: 20 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
                 exit={{ scale: 0.95, opacity: 0, y: 20 }}
                 onClick={(e) => e.stopPropagation()}
               >
-                <button
-                  type="button"
-                  onClick={handleCloseModal}
-                  className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 transition-colors"
-                >
-                  <X size={24} className="text-gray-500" />
-                </button>
+                {/* Blue Header Accent */}
+                <div className="w-full h-1 bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700"></div>
 
-                <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">
-                  {editingDoctor ? `Edit Doctor` : `Add New Doctor`}
-                </h2>
+                {/* Scrollable Content */}
+                <div className="overflow-y-auto max-h-[calc(90vh-1px)] px-8 py-6">
+                  <button
+                    type="button"
+                    onClick={handleCloseModal}
+                    className="absolute top-5 right-5 p-2 rounded-lg hover:bg-gray-100 transition-colors z-10"
+                  >
+                    <X size={20} className="text-gray-500" />
+                  </button>
 
-                <div
-                 
-                  className="space-y-6"
-                >
-                  {step === 1 && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="md:col-span-2">
-                        <label className="block font-medium mb-3 text-gray-700">
-                          Profile Image
-                        </label>
-                        <div className="flex flex-col md:flex-row items-center gap-6">
-                          <div className="relative">
-                            <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-md">
-                              {previewUrl ? (
-                                <img
-                                  src={previewUrl}
-                                  alt="preview"
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                                  <div className="bg-white/80 p-3 rounded-full">
-                                    <Plus className="text-gray-500" size={28} />
+                  <h2 className="text-2xl font-bold mb-2 text-blue-600 tracking-tight">
+                    {editingDoctor ? `Edit Doctor Profile` : `Add New Doctor`}
+                  </h2>
+                  <p className="text-sm text-gray-500 mb-6">
+                    {step === 1 && "Basic Information"}
+                    {step === 2 && "Contact & Professional Details"}
+                    {step === 3 && "Schedule & Availability"}
+                  </p>
+
+                  {/* Progress Indicator */}
+                  <div className="flex items-center justify-center gap-2 mb-8">
+                    <div
+                      className={`h-8 w-8 rounded-full flex items-center justify-center font-semibold text-xs transition-all ${
+                        step >= 1
+                          ? "bg-blue-600 text-white"
+                          : "bg-gray-200 text-gray-500"
+                      }`}
+                    >
+                      1
+                    </div>
+                    <div
+                      className={`h-0.5 w-12 transition-colors ${
+                        step >= 2 ? "bg-blue-600" : "bg-gray-300"
+                      }`}
+                    />
+                    <div
+                      className={`h-8 w-8 rounded-full flex items-center justify-center font-semibold text-xs transition-all ${
+                        step >= 2
+                          ? "bg-blue-600 text-white"
+                          : "bg-gray-200 text-gray-500"
+                      }`}
+                    >
+                      2
+                    </div>
+                    <div
+                      className={`h-0.5 w-12 transition-colors ${
+                        step >= 3 ? "bg-blue-600" : "bg-gray-300"
+                      }`}
+                    />
+                    <div
+                      className={`h-8 w-8 rounded-full flex items-center justify-center font-semibold text-xs transition-all ${
+                        step >= 3
+                          ? "bg-blue-600 text-white"
+                          : "bg-gray-200 text-gray-500"
+                      }`}
+                    >
+                      3
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    {step === 1 && (
+                      <div className="space-y-5">
+                        {/* Profile Image Section */}
+                        <div className="bg-slate-50 rounded-lg p-5 border border-blue-100">
+                          <label className="block text-sm font-bold text-gray-800 mb-3">
+                            Profile Image
+                          </label>
+                          <div className="flex flex-col md:flex-row items-center gap-5">
+                            <div className="relative">
+                              <div className="w-28 h-28 rounded-full overflow-hidden border-2 border-blue-200 shadow-sm">
+                                {previewUrl ? (
+                                  <img
+                                    src={previewUrl}
+                                    alt="preview"
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+                                    <div className="bg-white/80 p-3 rounded-full">
+                                      <Plus
+                                        className="text-gray-400"
+                                        size={24}
+                                      />
+                                    </div>
                                   </div>
-                                </div>
+                                )}
+                              </div>
+                              <div className="absolute bottom-0 right-0 bg-blue-600 rounded-full p-1.5 shadow-lg hover:bg-blue-700 transition-colors cursor-pointer">
+                                <label
+                                  htmlFor="avatar-upload"
+                                  className="cursor-pointer"
+                                >
+                                  <Plus size={14} className="text-white" />
+                                  <input
+                                    id="avatar-upload"
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleImageChange}
+                                    className="hidden"
+                                  />
+                                </label>
+                              </div>
+                            </div>
+
+                            <div className="flex-1">
+                              <p className="text-sm font-semibold text-gray-800 mb-1">
+                                Upload Profile Photo
+                              </p>
+                              <p className="text-xs text-gray-500 mb-3">
+                                JPG, PNG, or GIF (max 5MB)
+                              </p>
+                              <label
+                                htmlFor="avatar-upload-fallback"
+                                className="inline-block px-4 py-2 bg-white hover:bg-gray-50 text-gray-700 text-sm rounded-lg cursor-pointer transition-colors font-medium border border-gray-200"
+                              >
+                                Choose File
+                              </label>
+                              <input
+                                id="avatar-upload-fallback"
+                                type="file"
+                                accept="image/*"
+                                onChange={handleImageChange}
+                                className="hidden"
+                              />
+                              {errors.image && (
+                                <p className="text-red-500 text-xs mt-2 font-medium">
+                                  {errors.image}
+                                </p>
                               )}
                             </div>
-                            <div className="absolute bottom-0 right-0 bg-teal-600 rounded-full p-2 shadow-lg hover:bg-teal-700 transition-colors cursor-pointer">
-                              <label
-                                htmlFor="avatar-upload"
-                                className="cursor-pointer"
-                              >
-                                <Plus size={16} className="text-white" />
-                                <input
-                                  id="avatar-upload"
-                                  type="file"
-                                  accept="image/*"
-                                  onChange={handleImageChange}
-                                  className="hidden"
-                                />
-                              </label>
-                            </div>
                           </div>
+                        </div>
 
-                          <div className="flex-1">
-                            <p className="text-gray-600 mb-2">Profile Photo</p>
-                            <p className="text-sm text-gray-500 mb-3">
-                              Upload a clear, professional headshot (JPG, PNG,
-                              or GIF, max 5MB)
-                            </p>
-                            <label
-                              htmlFor="avatar-upload-fallback"
-                              className="inline-block px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg cursor-pointer transition-colors font-medium"
-                            >
-                              Choose File
+                        {/* Form Fields */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                              Full Name
                             </label>
                             <input
-                              id="avatar-upload-fallback"
-                              type="file"
-                              accept="image/*"
-                              onChange={handleImageChange}
-                              className="hidden"
+                              type="text"
+                              placeholder="Enter full name"
+                              className={`w-full text-black border px-3 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm ${
+                                errors.name
+                                  ? "border-red-500"
+                                  : "border-gray-200"
+                              }`}
+                              value={formData.name}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  name: e.target.value,
+                                })
+                              }
                             />
-                            {errors.image && (
-                              <p className="text-red-500 text-sm mt-2">
-                                {errors.image}
+                            {errors.name && (
+                              <p className="text-red-500 text-xs mt-1 font-medium">
+                                {errors.name}
+                              </p>
+                            )}
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                              Phone Number
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="Enter phone number"
+                              className={`w-full text-black border px-3 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm ${
+                                errors.phoneNumber
+                                  ? "border-red-500"
+                                  : "border-gray-200"
+                              }`}
+                              value={formData.phoneNumber}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  phoneNumber: e.target.value,
+                                })
+                              }
+                            />
+                            {errors.phoneNumber && (
+                              <p className="text-red-500 text-xs mt-1 font-medium">
+                                {errors.phoneNumber}
+                              </p>
+                            )}
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                              Gender
+                            </label>
+                            <select
+                              className={`w-full text-black border px-3 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm ${
+                                errors.gender
+                                  ? "border-red-500"
+                                  : "border-gray-200"
+                              }`}
+                              value={formData.gender}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  gender: e.target.value,
+                                })
+                              }
+                            >
+                              <option value="">Select Gender</option>
+                              <option>Male</option>
+                              <option>Female</option>
+                              <option>Other</option>
+                            </select>
+                            {errors.gender && (
+                              <p className="text-red-500 text-xs mt-1 font-medium">
+                                {errors.gender}
+                              </p>
+                            )}
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                              Specialization
+                            </label>
+                            <select
+                              className={`w-full text-black border px-3 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm ${
+                                errors.specialty
+                                  ? "border-red-500"
+                                  : "border-gray-200"
+                              }`}
+                              value={formData.specialty}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  specialty: e.target.value,
+                                })
+                              }
+                            >
+                              <option value="">Select Specialization</option>
+                              <option>General Physician</option>
+                              <option>Cardiologist</option>
+                              <option>Dermatologist</option>
+                              <option>Pediatrician</option>
+                              <option>Gynecologist</option>
+                            </select>
+                            {errors.specialty && (
+                              <p className="text-red-500 text-xs mt-1 font-medium">
+                                {errors.specialty}
+                              </p>
+                            )}
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                              Degree
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="Enter degree"
+                              className={`w-full text-black border px-3 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm ${
+                                errors.degree
+                                  ? "border-red-500"
+                                  : "border-gray-200"
+                              }`}
+                              value={formData.degree}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  degree: e.target.value,
+                                })
+                              }
+                            />
+                            {errors.degree && (
+                              <p className="text-red-500 text-xs mt-1 font-medium">
+                                {errors.degree}
+                              </p>
+                            )}
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                              Experience
+                            </label>
+                            <select
+                              className={`w-full text-black border px-3 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm ${
+                                errors.experience
+                                  ? "border-red-500"
+                                  : "border-gray-200"
+                              }`}
+                              value={formData.experience}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  experience: e.target.value,
+                                })
+                              }
+                            >
+                              <option value="">Select Experience</option>
+                              <option>1 Year</option>
+                              <option>2 Years</option>
+                              <option>3 Years</option>
+                              <option>5+ Years</option>
+                            </select>
+                            {errors.experience && (
+                              <p className="text-red-500 text-xs mt-1 font-medium">
+                                {errors.experience}
                               </p>
                             )}
                           </div>
                         </div>
                       </div>
+                    )}
 
-                      <div>
-                        <label className="block font-medium mb-2 text-gray-700">
-                          Full Name
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="Enter full name"
-                          className={`w-full text-black border p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 ${
-                            errors.name ? "border-red-500" : "border-gray-300"
-                          }`}
-                          value={formData.name}
-                          onChange={(e) =>
-                            setFormData({ ...formData, name: e.target.value })
-                          }
-                        />
-                        {errors.name && (
-                          <p className="text-red-500 text-sm mt-1">
-                            {errors.name}
-                          </p>
-                        )}
-                      </div>
+                    {step === 2 && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                            Consultation Fees (₹)
+                          </label>
+                          <input
+                            type="number"
+                            placeholder="Enter fees"
+                            className={`w-full border text-black px-3 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm ${
+                              errors.fees ? "border-red-500" : "border-gray-200"
+                            }`}
+                            value={formData.fees}
+                            onChange={(e) =>
+                              setFormData({ ...formData, fees: e.target.value })
+                            }
+                          />
+                          {errors.fees && (
+                            <p className="text-red-500 text-xs mt-1 font-medium">
+                              {errors.fees}
+                            </p>
+                          )}
+                        </div>
 
-                      <div>
-                        <label className="block font-medium mb-2 text-gray-700">
-                          Phone Number
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="Enter phone number"
-                          className={`w-full text-black border p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 ${
-                            errors.phoneNumber
-                              ? "border-red-500"
-                              : "border-gray-300"
-                          }`}
-                          value={formData.phoneNumber}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              phoneNumber: e.target.value,
-                            })
-                          }
-                        />
-                        {errors.phoneNumber && (
-                          <p className="text-red-500 text-sm mt-1">
-                            {errors.phoneNumber}
-                          </p>
-                        )}
-                      </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                            Email Address
+                          </label>
+                          <input
+                            type="email"
+                            placeholder="doctor@clinic.com"
+                            className={`w-full border text-black px-3 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm ${
+                              errors.email
+                                ? "border-red-500"
+                                : "border-gray-200"
+                            }`}
+                            value={formData.email}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                email: e.target.value,
+                              })
+                            }
+                          />
+                          {errors.email && (
+                            <p className="text-red-500 text-xs mt-1 font-medium">
+                              {errors.email}
+                            </p>
+                          )}
+                        </div>
 
-                      <div>
-                        <label className="block font-medium mb-2 text-gray-700">
-                          Gender
-                        </label>
-                        <select
-                          className={`w-full text-black border p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 ${
-                            errors.gender ? "border-red-500" : "border-gray-300"
-                          }`}
-                          value={formData.gender}
-                          onChange={(e) =>
-                            setFormData({ ...formData, gender: e.target.value })
-                          }
-                        >
-                          <option value="">Select Gender</option>
-                          <option>Male</option>
-                          <option>Female</option>
-                          <option>Other</option>
-                        </select>
-                        {errors.gender && (
-                          <p className="text-red-500 text-sm mt-1">
-                            {errors.gender}
-                          </p>
-                        )}
-                      </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                            Password{" "}
+                            {editingDoctor && "(Leave blank to keep current)"}
+                          </label>
+                          <input
+                            type="password"
+                            placeholder="••••••••"
+                            className={`w-full text-black border px-3 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm ${
+                              errors.password
+                                ? "border-red-500"
+                                : "border-gray-200"
+                            }`}
+                            value={formData.password}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                password: e.target.value,
+                              })
+                            }
+                          />
+                          {errors.password && (
+                            <p className="text-red-500 text-xs mt-1 font-medium">
+                              {errors.password}
+                            </p>
+                          )}
+                        </div>
 
-                      <div>
-                        <label className="block font-medium mb-2 text-gray-700">
-                          Specialization
-                        </label>
-                        <select
-                          className={`w-full text-black border p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 ${
-                            errors.specialty
-                              ? "border-red-500"
-                              : "border-gray-300"
-                          }`}
-                          value={formData.specialty}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              specialty: e.target.value,
-                            })
-                          }
-                        >
-                          <option value="">Select Specialization</option>
-                          <option>General Physician</option>
-                          <option>Cardiologist</option>
-                          <option>Dermatologist</option>
-                          <option>Pediatrician</option>
-                          <option>Gynecologist</option>
-                        </select>
-                        {errors.specialty && (
-                          <p className="text-red-500 text-sm mt-1">
-                            {errors.specialty}
-                          </p>
-                        )}
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                            About Doctor
+                          </label>
+                          <textarea
+                            placeholder="Brief description about the doctor..."
+                            className={`w-full text-black border px-3 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm min-h-[100px] ${
+                              errors.about
+                                ? "border-red-500"
+                                : "border-gray-200"
+                            }`}
+                            value={formData.about}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                about: e.target.value,
+                              })
+                            }
+                          />
+                          {errors.about && (
+                            <p className="text-red-500 text-xs mt-1 font-medium">
+                              {errors.about}
+                            </p>
+                          )}
+                        </div>
                       </div>
+                    )}
 
-                      <div>
-                        <label className="block font-medium mb-2 text-gray-700">
-                          Degree
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="Enter degree"
-                          className={`w-full text-black border p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 ${
-                            errors.degree ? "border-red-500" : "border-gray-300"
-                          }`}
-                          value={formData.degree}
-                          onChange={(e) =>
-                            setFormData({ ...formData, degree: e.target.value })
-                          }
-                        />
-                        {errors.degree && (
-                          <p className="text-red-500 text-sm mt-1">
-                            {errors.degree}
-                          </p>
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block font-medium mb-2 text-gray-700">
-                          Experience
-                        </label>
-                        <select
-                          className={`w-full text-black border p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 ${
-                            errors.experience
-                              ? "border-red-500"
-                              : "border-gray-300"
-                          }`}
-                          value={formData.experience}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              experience: e.target.value,
-                            })
-                          }
-                        >
-                          <option value="">Select Experience</option>
-                          <option>1 Year</option>
-                          <option>2 Years</option>
-                          <option>3 Years</option>
-                          <option>5+ Years</option>
-                        </select>
-                        {errors.experience && (
-                          <p className="text-red-500 text-sm mt-1">
-                            {errors.experience}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                  {step === 2 && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="block font-medium mb-2 text-gray-700">
-                          Consultation Fees ($)
-                        </label>
-                        <input
-                          type="number"
-                          placeholder="Enter fees"
-                          className={`w-full border text-black p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 ${
-                            errors.fees ? "border-red-500" : "border-gray-300"
-                          }`}
-                          value={formData.fees}
-                          onChange={(e) =>
-                            setFormData({ ...formData, fees: e.target.value })
-                          }
-                        />
-                        {errors.fees && (
-                          <p className="text-red-500 text-sm mt-1">
-                            {errors.fees}
-                          </p>
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block font-medium mb-2 text-gray-700">
-                          Email
-                        </label>
-                        <input
-                          type="email"
-                          placeholder="Enter email"
-                          className={`w-full border text-black p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 ${
-                            errors.email ? "border-red-500" : "border-gray-300"
-                          }`}
-                          value={formData.email}
-                          onChange={(e) =>
-                            setFormData({ ...formData, email: e.target.value })
-                          }
-                        />
-                        {errors.email && (
-                          <p className="text-red-500 text-sm mt-1">
-                            {errors.email}
-                          </p>
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block font-medium mb-2 text-gray-700">
-                          Password{" "}
-                          {editingDoctor && "(Leave blank to keep current)"}
-                        </label>
-                        <input
-                          type="password"
-                          placeholder="Enter password"
-                          className={`w-full text-black border p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 ${
-                            errors.password
-                              ? "border-red-500"
-                              : "border-gray-300"
-                          }`}
-                          value={formData.password}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              password: e.target.value,
-                            })
-                          }
-                        />
-                        {errors.password && (
-                          <p className="text-red-500 text-sm mt-1">
-                            {errors.password}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="md:col-span-2">
-                        <label className="block font-medium mb-2 text-gray-700">
-                          About
-                        </label>
-                        <textarea
-                          placeholder="Write about the doctor"
-                          className={`w-full text-black border p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 min-h-[120px] ${
-                            errors.about ? "border-red-500" : "border-gray-300"
-                          }`}
-                          value={formData.about}
-                          onChange={(e) =>
-                            setFormData({ ...formData, about: e.target.value })
-                          }
-                        />
-                        {errors.about && (
-                          <p className="text-red-500 text-sm mt-1">
-                            {errors.about}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                  {step === 3 && (
-                    <div className="space-y-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {Object.keys(schedule).map((day) => (
-                          <div
-                            key={day}
-                            className="border rounded-xl p-4 bg-gray-50"
-                          >
-                            <div className="flex justify-between items-center mb-3">
-                              <span className="font-semibold text-gray-800">
-                                {day}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setSchedule({
-                                    ...schedule,
-                                    [day]: [...schedule[day], ""],
-                                  })
-                                }
-                                className="text-black hover:text-teal-800 font-medium flex items-center gap-1"
-                              >
-                                <Plus size={16} /> Add Slot
-                              </button>
-                            </div>
-
-                            {schedule[day].map((slot, index) => (
-                              <div key={index} className="flex gap-3 mb-3">
-                                <input
-                                  type="text"
-                                  placeholder="9:00AM-12:00PM"
-                                  className={`flex-1 border p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 text-black ${
-                                    errors[`schedule-${day}-${index}`]
-                                      ? "border-red-500"
-                                      : "border-gray-300"
-                                  }`}
-                                  value={slot}
-                                  onChange={(e) => {
-                                    const newSlots = [...schedule[day]];
-                                    newSlots[index] = e.target.value;
-                                    setSchedule({
-                                      ...schedule,
-                                      [day]: newSlots,
-                                    });
-                                  }}
-                                />
+                    {step === 3 && (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {Object.keys(schedule).map((day) => (
+                            <div
+                              key={day}
+                              className="border-2 border-blue-100 rounded-lg p-4 bg-slate-50"
+                            >
+                              <div className="flex justify-between items-center mb-3">
+                                <span className="font-bold text-sm text-gray-800">
+                                  {day}
+                                </span>
                                 <button
                                   type="button"
-                                  onClick={() => {
-                                    const newSlots = [...schedule[day]];
-                                    newSlots.splice(index, 1);
+                                  onClick={() =>
                                     setSchedule({
                                       ...schedule,
-                                      [day]: newSlots,
-                                    });
-                                  }}
-                                  className="text-red-500 hover:text-red-700 p-2.5 rounded-lg hover:bg-red-50"
+                                      [day]: [...schedule[day], ""],
+                                    })
+                                  }
+                                  className="text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1 text-xs cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors"
                                 >
-                                  <X size={18} />
+                                  <Plus size={14} /> Add Slot
                                 </button>
                               </div>
-                            ))}
 
-                            {schedule[day].length === 0 && (
-                              <p className="text-gray-500 text-sm italic">
-                                No slots added for doctor on {day}
-                              </p>
-                            )}
-                          </div>
-                        ))}
+                              {schedule[day].map((slot, index) => (
+                                <div key={index} className="flex gap-2 mb-2">
+                                  <input
+                                    type="text"
+                                    placeholder="9:00AM-12:00PM"
+                                    className={`flex-1 border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm  text-black transition-all ${
+                                      errors[`schedule-${day}-${index}`]
+                                        ? "border-red-500"
+                                        : "border-gray-200"
+                                    }`}
+                                    value={slot}
+                                    onChange={(e) => {
+                                      const newSlots = [...schedule[day]];
+                                      newSlots[index] = e.target.value;
+                                      setSchedule({
+                                        ...schedule,
+                                        [day]: newSlots,
+                                      });
+                                    }}
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const newSlots = [...schedule[day]];
+                                      newSlots.splice(index, 1);
+                                      setSchedule({
+                                        ...schedule,
+                                        [day]: newSlots,
+                                      });
+                                    }}
+                                    className="text-red-500 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+                                  >
+                                    <X size={16} />
+                                  </button>
+                                </div>
+                              ))}
+
+                              {schedule[day].length === 0 && (
+                                <p className="text-gray-400 text-xs italic">
+                                  No slots added
+                                </p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
                       </div>
+                    )}
+
+                    {/* Navigation Buttons */}
+                    <div className="flex justify-between pt-4 border-t border-blue-100 mt-6">
+                      {step > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => setStep(step - 1)}
+                          className="flex items-center gap-2 text-gray-700 hover:text-gray-900 font-semibold px-5 py-2.5 rounded-lg hover:bg-gray-100 transition-all cursor-pointer text-sm"
+                        >
+                          <ArrowLeft size={18} /> Back
+                        </button>
+                      )}
+
+                      {step < 3 ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            let isValid = true;
+                            const newErrors: Record<string, string> = {
+                              ...errors,
+                            };
+
+                            if (step === 1) {
+                              if (!formData.name.trim()) {
+                                newErrors.name = "Full name is required";
+                                isValid = false;
+                              }
+                              if (
+                                !formData.phoneNumber.trim() ||
+                                !/^\d{10}$/.test(formData.phoneNumber)
+                              ) {
+                                newErrors.phoneNumber =
+                                  !formData.phoneNumber.trim()
+                                    ? "Phone number is required"
+                                    : "Phone number must be 10 digits";
+                                isValid = false;
+                              }
+                              if (!formData.gender.trim()) {
+                                newErrors.gender = "Gender is required";
+                                isValid = false;
+                              }
+                              if (!formData.specialty.trim()) {
+                                newErrors.specialty =
+                                  "Specialization is required";
+                                isValid = false;
+                              }
+                              if (!formData.degree.trim()) {
+                                newErrors.degree = "Degree is required";
+                                isValid = false;
+                              }
+                              if (!formData.experience.trim()) {
+                                newErrors.experience = "Experience is required";
+                                isValid = false;
+                              }
+                              if (!formData.image && !editingDoctor) {
+                                newErrors.image = "Profile image is required";
+                                isValid = false;
+                              }
+                            } else if (step === 2) {
+                              if (!formData.fees.trim()) {
+                                newErrors.fees = "Consultation fees required";
+                                isValid = false;
+                              }
+                              if (
+                                !formData.email.trim() ||
+                                !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(
+                                  formData.email
+                                )
+                              ) {
+                                newErrors.email = !formData.email.trim()
+                                  ? "Email is required"
+                                  : "Invalid email address";
+                                isValid = false;
+                              }
+                              if (!editingDoctor && !formData.password.trim()) {
+                                newErrors.password = "Password is required";
+                                isValid = false;
+                              }
+                              if (!formData.about.trim()) {
+                                newErrors.about = "About is required";
+                                isValid = false;
+                              }
+                            }
+
+                            setErrors(newErrors);
+
+                            if (isValid) {
+                              setStep(step + 1);
+                            }
+                          }}
+                          className="ml-auto flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-lg hover:bg-blue-700 transition-all font-semibold cursor-pointer text-sm active:scale-95"
+                        >
+                          Next <ArrowRight size={18} />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleSubmit(e as unknown as React.FormEvent);
+                          }}
+                          disabled={isSubmitting}
+                          className={`ml-auto px-5 py-2.5 rounded-lg font-semibold transition-all text-sm cursor-pointer ${
+                            isSubmitting
+                              ? "bg-gray-400 cursor-not-allowed"
+                              : "bg-blue-600 hover:bg-blue-700 text-white active:scale-95"
+                          }`}
+                        >
+                          {isSubmitting ? (
+                            <span className="flex items-center gap-2">
+                              <span className="h-4 w-4 border-t-2 border-white rounded-full animate-spin"></span>
+                              Processing...
+                            </span>
+                          ) : editingDoctor ? (
+                            "Update Doctor"
+                          ) : (
+                            "Add Doctor"
+                          )}
+                        </button>
+                      )}
                     </div>
-                  )}
-                  {/* Step Navigation */}
-\                  <div className="flex justify-between pt-4">
-                    {step > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => setStep(step - 1)}
-                        className="flex items-center gap-2 text-gray-700 hover:text-gray-900 font-medium px-4 py-2.5 rounded-xl hover:bg-gray-100 transition"
-                      >
-                        <ArrowLeft size={20} /> Back
-                      </button>
-                    )}
-
-                    {step < 3 ? (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          // Only validate required fields for current step
-                          let isValid = true;
-                          const newErrors: Record<string, string> = {
-                            ...errors,
-                          };
-
-                          if (step === 1) {
-                            // Validate step 1 fields
-                            if (!formData.name.trim()) {
-                              newErrors.name = "Full name is required";
-                              isValid = false;
-                            }
-                            if (
-                              !formData.phoneNumber.trim() ||
-                              !/^\d{10}$/.test(formData.phoneNumber)
-                            ) {
-                              newErrors.phoneNumber =
-                                !formData.phoneNumber.trim()
-                                  ? "Phone number is required"
-                                  : "Phone number must be 10 digits";
-                              isValid = false;
-                            }
-                            if (!formData.gender.trim()) {
-                              newErrors.gender = "Gender is required";
-                              isValid = false;
-                            }
-                            if (!formData.specialty.trim()) {
-                              newErrors.specialty =
-                                "Specialization is required";
-                              isValid = false;
-                            }
-                            if (!formData.degree.trim()) {
-                              newErrors.degree = "Degree is required";
-                              isValid = false;
-                            }
-                            if (!formData.experience.trim()) {
-                              newErrors.experience = "Experience is required";
-                              isValid = false;
-                            }
-                            if (!formData.image && !editingDoctor) {
-                              newErrors.image = "Profile image is required";
-                              isValid = false;
-                            }
-                          } else if (step === 2) {
-                            // Validate step 2 fields
-                            if (!formData.fees.trim()) {
-                              newErrors.fees = "Consultation fees required";
-                              isValid = false;
-                            }
-                            if (
-                              !formData.email.trim() ||
-                              !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(
-                                formData.email
-                              )
-                            ) {
-                              newErrors.email = !formData.email.trim()
-                                ? "Email is required"
-                                : "Invalid email address";
-                              isValid = false;
-                            }
-                            if (!editingDoctor && !formData.password.trim()) {
-                              newErrors.password = "Password is required";
-                              isValid = false;
-                            }
-                            if (!formData.about.trim()) {
-                              newErrors.about = "About is required";
-                              isValid = false;
-                            }
-                          }
-
-                          setErrors(newErrors);
-
-                          if (isValid) {
-                            setStep(step + 1);
-                          }
-                        }}
-                        className="ml-auto flex items-center gap-2 bg-teal-600 text-white px-6 py-2.5 rounded-xl hover:bg-teal-700 transition"
-                      >
-                        Next <ArrowRight size={20} />
-                      </button>
-                    ) : (
-                      <button
-                       onClick={(e) => {
-  e.preventDefault(); // prevent form submission if inside <form>
-  handleSubmit(e as unknown as React.FormEvent); // or better: don't use form
-}}
-                        disabled={isSubmitting}
-                        className={`ml-auto px-6 py-2.5 rounded-xl font-medium transition ${
-                          isSubmitting
-                            ? "bg-teal-400 cursor-not-allowed"
-                            : "bg-teal-600 hover:bg-teal-700 text-white"
-                        }`}
-                      >
-                        {isSubmitting ? (
-                          <span className="flex items-center gap-2">
-                            <span className="h-4 w-4 border-t-2 border-white rounded-full animate-spin"></span>
-                            Processing...
-                          </span>
-                        ) : editingDoctor ? (
-                          "Update Doctor"
-                        ) : (
-                          "Add Doctor"
-                        )}
-                      </button>
-                    )}
                   </div>
                 </div>
               </motion.div>

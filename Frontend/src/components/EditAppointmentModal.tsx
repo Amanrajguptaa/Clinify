@@ -83,104 +83,176 @@ const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/90 bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="p-4 border-b flex justify-between items-center">
-          <h2 className="text-xl font-bold">Edit Patient Details</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white w-full max-w-2xl rounded-lg shadow-xl relative max-h-[90vh] overflow-hidden border-2 border-blue-200">
+        {/* Blue Top Accent */}
+        <div className="w-full h-1 bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700"></div>
 
-        <form onSubmit={handleSubmit} className="p-4 space-y-4">
-          {error && <div className="text-red-500 text-sm">{error}</div>}
-
-          <h3 className="font-semibold text-gray-800">Patient Information</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input
-              type="text"
-              name="patientName"
-              placeholder="Name"
-              value={formData.patientName}
-              onChange={handleChange}
-              className="border border-gray-300 rounded-md p-2"
-              required
-            />
-            <input
-              type="email"
-              name="patientEmail"
-              placeholder="Email"
-              value={formData.patientEmail}
-              onChange={handleChange}
-              className="border border-gray-300 rounded-md p-2"
-            />
-            <input
-              type="tel"
-              name="patientPhoneNumber"
-              placeholder="Phone Number"
-              value={formData.patientPhoneNumber}
-              onChange={handleChange}
-              className="border border-gray-300 rounded-md p-2"
-              required
-            />
-            <input
-              type="number"
-              name="patientAge"
-              placeholder="Age"
-              value={formData.patientAge}
-              onChange={handleChange}
-              className="border border-gray-300 rounded-md p-2"
-              min="0"
-            />
-            <select
-              name="patientGender"
-              value={formData.patientGender}
-              onChange={handleChange}
-              className="border border-gray-300 rounded-md p-2"
-            >
-              <option value="MALE">Male</option>
-              <option value="FEMALE">Female</option>
-              <option value="OTHER">Other</option>
-            </select>
-            <input
-              type="text"
-              name="patientAddress"
-              placeholder="Address"
-              value={formData.patientAddress}
-              onChange={handleChange}
-              className="border border-gray-300 rounded-md p-2"
-            />
-          </div>
-
-          <textarea
-            name="patientIssue"
-            placeholder="Patient Issue"
-            value={formData.patientIssue}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded-md p-2"
-            rows={2}
-          />
-
-          <div className="flex justify-end gap-3 pt-4">
+        <div className="overflow-y-auto max-h-[calc(90vh-1px)]">
+          {/* Header */}
+          <div className="px-6 py-4 border-b border-blue-100 flex justify-between items-center">
+            <h2 className="text-xl font-bold text-blue-600">
+              Edit Patient Details
+            </h2>
             <button
-              type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50"
+              className="text-gray-500 hover:text-gray-700 p-1.5 rounded-full hover:bg-gray-100 transition-colors"
+              aria-label="Close"
             >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isSaving}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-            >
-              {isSaving ? "Saving..." : "Save Changes"}
+              <X className="w-5 h-5" />
             </button>
           </div>
-        </form>
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="px-6 py-5 space-y-5">
+            {error && (
+              <div className="bg-red-50 text-red-700 px-3 py-2.5 rounded-lg text-sm font-medium border border-red-200">
+                {error}
+              </div>
+            )}
+
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-3">
+                Patient Information
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Name */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    Full Name
+                  </label>
+                  <input
+                    type="text"
+                    name="patientName"
+                    value={formData.patientName}
+                    onChange={handleChange}
+                    className="w-full border border-gray-300 px-3 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
+                    required
+                  />
+                </div>
+
+                {/* Email */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    name="patientEmail"
+                    value={formData.patientEmail}
+                    onChange={handleChange}
+                    className="w-full border border-gray-300 px-3 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
+                  />
+                </div>
+
+                {/* Phone */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    name="patientPhoneNumber"
+                    value={formData.patientPhoneNumber}
+                    onChange={handleChange}
+                    className="w-full border border-gray-300 px-3 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
+                    required
+                  />
+                </div>
+
+                {/* Age */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    Age
+                  </label>
+                  <input
+                    type="number"
+                    name="patientAge"
+                    min="0"
+                    max="120"
+                    value={formData.patientAge}
+                    onChange={handleChange}
+                    className="w-full border border-gray-300 px-3 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
+                  />
+                </div>
+
+                {/* Gender */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    Gender
+                  </label>
+                  <select
+                    name="patientGender"
+                    value={formData.patientGender}
+                    onChange={handleChange}
+                    className="w-full border border-gray-300 px-3 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
+                  >
+                    <option value="MALE">Male</option>
+                    <option value="FEMALE">Female</option>
+                    <option value="OTHER">Other</option>
+                  </select>
+                </div>
+
+                {/* Address */}
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    Address
+                  </label>
+                  <input
+                    type="text"
+                    name="patientAddress"
+                    value={formData.patientAddress}
+                    onChange={handleChange}
+                    className="w-full border border-gray-300 px-3 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Issue */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                Issue / Symptoms
+              </label>
+              <textarea
+                name="patientIssue"
+                value={formData.patientIssue}
+                onChange={handleChange}
+                rows={3}
+                className="w-full border border-gray-300 px-3 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
+              />
+            </div>
+
+            {/* Footer Buttons */}
+            <div className="flex justify-end gap-3 pt-4 border-t border-blue-100">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2.5 text-gray-700 font-medium rounded-lg hover:bg-gray-100 transition-colors text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isSaving}
+                className={`px-5 py-2.5 rounded-lg font-semibold text-sm transition-all flex items-center gap-2 ${
+                  isSaving
+                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    : "bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.98]"
+                }`}
+              >
+                {isSaving ? (
+                  <>
+                    <span className="h-4 w-4 border-t-2 border-white rounded-full animate-spin"></span>
+                    Saving...
+                  </>
+                ) : (
+                  "Save Changes"
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

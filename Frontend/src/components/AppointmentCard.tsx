@@ -1,7 +1,7 @@
-
 "use client";
 
 import React from "react";
+import axios from "axios";
 import {
   Calendar,
   Clock,
@@ -25,8 +25,8 @@ export interface Appointment {
     age: number;
     gender: string;
     issue: string;
-    email?: string;        
-    address?: string;      
+    email?: string;
+    address?: string;
   };
   slot: string;
   appointmentDate: string;
@@ -40,6 +40,8 @@ interface AppointmentCardProps {
   onEdit?: (id: string) => void;
   onDelete?: (id: string) => void;
   onReschedule?: (id: string) => void;
+  // Optional: refresh appointments after status update
+  onStatusChange?: () => void;
 }
 
 const AppointmentCard: React.FC<AppointmentCardProps> = ({
@@ -47,6 +49,7 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({
   onEdit,
   onDelete,
   onReschedule,
+  onStatusChange,
 }) => {
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -56,6 +59,8 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({
         return "bg-green-100 text-green-800";
       case "CANCELLED":
         return "bg-red-100 text-red-800";
+      case "COMPLETED":
+        return "bg-blue-100 text-blue-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -67,35 +72,74 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({
       : "bg-red-100 text-red-800";
   };
 
+  const handleStatusUpdate = async (newStatus: "COMPLETED" | "CANCELLED") => {
+    try {
+      const response = await axios.put(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/appointment/status/${data.id}`,
+        { status: newStatus },
+        {
+          withCredentials: true, // sends cookies (for auth)
+        }
+      );
+
+      if (response.status === 200) {
+        onStatusChange?.();
+        console.log("Status updated successfully");
+      }
+    } catch (error) {
+      console.error("Failed to update appointment status:", error);
+    }
+  };
+
   return (
-    <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow duration-300">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-400 overflow-hidden duration-300">
       {/* Header with Doctor Info */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4">
-        <div className="flex items-start justify-between">
+      <div className="bg-blue-600/70 p-4">
+        <div className="flex flex-col items-start justify-center">
           <div>
-            <h3 className="font-bold text-lg text-gray-800">{data.doctor.name}</h3>
-            <div className="flex items-center gap-1 mt-1">
-              <Stethoscope className="w-4 h-4 text-indigo-600" />
-              <span className="text-sm text-gray-600">{data.doctor.specialization}</span>
+            <h3 className="font-bold text-lg text-white">{data.doctor.name}</h3>
+            <div className="flex items-center gap-1 mt-1 text-white">
+              <Stethoscope className="w-4 h-4 text-blue-200" />
+              <span className="text-sm">{data.doctor.specialization}</span>
             </div>
-            <p className="text-sm font-medium text-gray-700 mt-1">
+            <p className="text-sm font-medium text-white mt-1">
               ₹{data.doctor.fees}
             </p>
           </div>
-          <div className="flex flex-col items-end">
-            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(data.status)}`}>
+          <div className="flex items-center justify-center gap-2 mt-2">
+            <span
+              className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(
+                data.status
+              )}`}
+            >
               {data.status}
             </span>
-            <span className={`px-2 py-1 rounded-full text-xs font-semibold mt-1 ${getPaymentColor(data.paymentStatus)}`}>
+            <span
+              className={`px-2 py-1 rounded-full text-xs font-semibold ${getPaymentColor(
+                data.paymentStatus
+              )}`}
+            >
               {data.paymentStatus}
             </span>
+
+            {/* Mark Complete Button */}
+            {data.status !== "COMPLETED" && data.status !== "CANCELLED" && (
+              <button
+                onClick={() => handleStatusUpdate("COMPLETED")}
+                className="cursor-pointer text-white bg-green-500 hover:bg-green-600 px-2 py-1 rounded-full text-xs transition-colors"
+              >
+                Mark Complete
+              </button>
+            )}
+
+          
           </div>
         </div>
       </div>
 
       {/* Patient & Appointment Details */}
-      <div className="p-4">
-        <div className="flex items-center gap-2 mb-3">
+      <div className="p-4 text-sm">
+        <div className="flex items-center gap-2 mb-2">
           <User className="w-4 h-4 text-gray-500" />
           <span className="font-medium text-gray-800">{data.patient.name}</span>
           <span className="text-xs text-gray-500">
@@ -103,7 +147,7 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({
           </span>
         </div>
 
-        <div className="space-y-2 text-sm text-gray-600">
+        <div className="space-y-2 text-xs text-gray-600">
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4" />
             {new Date(data.appointmentDate).toLocaleDateString("en-US", {
@@ -117,7 +161,7 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({
             <Clock className="w-4 h-4" />
             {data.slot} • {data.visitType}
           </div>
-          <div className="mt-2 p-2 bg-gray-50 rounded-md">
+          <div className="mt-4 p-2 bg-gray-50 rounded-sm border border-gray-200">
             <span className="font-medium text-gray-700">Issue:</span>{" "}
             <span className="text-gray-600">{data.patient.issue}</span>
           </div>
@@ -125,33 +169,36 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({
       </div>
 
       {/* Action Buttons */}
-      <div className="px-4 pb-4 flex justify-between">
+      <div className="px-4 pb-4 flex justify-between text-xs">
         <button
           onClick={() => onEdit?.(data.id)}
-          className="flex items-center gap-1 text-blue-600 hover:text-blue-800 transition-colors"
+          className="cursor-pointer flex items-center gap-1 text-blue-600 hover:text-blue-800 transition-colors"
           title="Edit"
         >
           <Edit className="w-4 h-4" />
-          <span className="text-sm">Edit</span>
+          <span>Edit</span>
         </button>
 
         <button
           onClick={() => onReschedule?.(data.id)}
-          className="flex items-center gap-1 text-purple-600 hover:text-purple-800 transition-colors"
+          className="cursor-pointer flex items-center gap-1 text-purple-600 hover:text-purple-800 transition-colors"
           title="Reschedule"
         >
           <RotateCcw className="w-4 h-4" />
-          <span className="text-sm">Reschedule</span>
+          <span>Reschedule</span>
         </button>
 
+        
         <button
-          onClick={() => onDelete?.(data.id)}
-          className="flex items-center gap-1 text-red-600 hover:text-red-800 transition-colors"
+                          onClick={() => handleStatusUpdate("CANCELLED")}
+
+          className="cursor-pointer flex items-center gap-1 text-red-600 hover:text-red-800 transition-colors"
           title="Delete"
         >
           <Trash2 className="w-4 h-4" />
-          <span className="text-sm">Delete</span>
+          <span>Cancel</span>
         </button>
+       
       </div>
     </div>
   );

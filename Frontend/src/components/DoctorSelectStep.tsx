@@ -44,8 +44,11 @@ const DoctorSelectStep: React.FC<Props> = ({ onNext, onCancel, date }) => {
         const response = await axios.get(
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/doctor/available`,
           {
-            params: { date: date.toISOString() },
-            withCredentials: true,
+            params: {
+  date: date.getFullYear() + '-' +
+        String(date.getMonth() + 1).padStart(2, '0') + '-' +
+        String(date.getDate()).padStart(2, '0')
+},withCredentials:true
           }
         );
 

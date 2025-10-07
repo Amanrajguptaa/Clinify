@@ -25,6 +25,7 @@ const eslintConfig = [
       "@next/next/no-img-element": "off",
       "prefer-const":"off",
       "@typescript-eslint/no-explicit-any": "off",
+      "react/no-unescaped-entities":"off"
     },
   }
 ];
