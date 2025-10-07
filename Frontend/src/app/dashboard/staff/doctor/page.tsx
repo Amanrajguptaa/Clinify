@@ -144,9 +144,8 @@ const Page = () => {
       fd.append("phoneNumber", formData.phoneNumber);
       fd.append("gender", formData.gender.toUpperCase());
 
-      let response;
 
-      response = await axios.post(
+      const response = await axios.post(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/doctor/add`,
         fd,
         { withCredentials: true }
@@ -925,7 +924,7 @@ const Page = () => {
                                 <input
                                   type="text"
                                   placeholder="9:00AM-12:00PM"
-                                  className={`flex-1 border p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 ${
+                                  className={`flex-1 border p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 text-black ${
                                     errors[`schedule-${day}-${index}`]
                                       ? "border-red-500"
                                       : "border-gray-300"

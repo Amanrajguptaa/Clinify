@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Calendar, UserCheck, UserPlus,Wallet } from "lucide-react";
+import { Home, Calendar, UserCheck, UserPlus } from "lucide-react";
 
 const Sidebar: React.FC = () => {
   const pathname = usePathname();

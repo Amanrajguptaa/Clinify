@@ -22,7 +22,7 @@ const Navbar: React.FC = () => {
         console.error("Login failed:", response.data.message);
       }
     } catch (err: unknown) {
-      console.error("Login error");
+      console.error("Login error",err);
     }
   };
 

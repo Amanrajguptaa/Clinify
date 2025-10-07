@@ -44,18 +44,17 @@ const addDoctor = async (req: Request, res: Response) => {
       });
     }
 
-   let parsedSchedule = {};
-if (req.body.schedule) {
-  try {
-    parsedSchedule = JSON.parse(req.body.schedule);
-  } catch (err) {
-    return res.status(400).json({
-      success: false,
-      message: "Schedule must be a valid JSON object",
-    });
-  }
-}
-
+    let parsedSchedule = {};
+    if (req.body.schedule) {
+      try {
+        parsedSchedule = JSON.parse(req.body.schedule);
+      } catch (err) {
+        return res.status(400).json({
+          success: false,
+          message: "Schedule must be a valid JSON object",
+        });
+      }
+    }
 
     const result = await cloudinary.uploader.upload(req.file.path, {
       resource_type: "image",
@@ -66,10 +65,10 @@ if (req.body.schedule) {
         name,
         image: result.secure_url,
         phoneNumber,
-        gender:gender.toUpperCase(),
+        gender: gender.toUpperCase(),
         specialization,
         degree,
-       experience: Number(experience.replace(/\D/g, "")) || 0,
+        experience: Number(experience.replace(/\D/g, "")) || 0,
         fees: Number(fees),
         about,
         schedule: parsedSchedule || {},
@@ -126,20 +125,20 @@ const editDoctor = async (req: Request, res: Response) => {
       });
     }
 
-   let imageUrl = existingDoctor.image; 
+    let imageUrl = existingDoctor.image;
 
     if (req.file) {
       const result = await cloudinary.uploader.upload(req.file.path, {
         resource_type: "image",
       });
-      imageUrl = result.secure_url; }
-
+      imageUrl = result.secure_url;
+    }
 
     const updatedDoctor = await prisma.doctor.update({
       where: { id },
       data: {
         name,
-        image:imageUrl,
+        image: imageUrl,
         phoneNumber,
         gender,
         specialization,
@@ -289,7 +288,6 @@ const changeAvailability = async (req: Request, res: Response) => {
   }
 };
 
-
 const getDoctorAvailableSlotsByDate = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -316,9 +314,6 @@ const getDoctorAvailableSlotsByDate = async (req: Request, res: Response) => {
     }
 
     const givenDate = new Date(date as string);
-    const today = new Date();
-
-    // Validate date format
     if (isNaN(givenDate.getTime())) {
       return res.status(400).json({
         success: false,
@@ -327,9 +322,43 @@ const getDoctorAvailableSlotsByDate = async (req: Request, res: Response) => {
     }
 
     const dayName = givenDate.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase();
-    const schedule = doctor.schedule as Record<string, string[]>;
-    const daySlots = schedule[dayName] || [];
 
+    // Helper: check if value is a valid schedule object
+function isValidSchedule(obj: unknown): obj is Record<string, string[]> {
+  if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) {
+    return false;
+  }
+
+  for (const [key, value] of Object.entries(obj)) {
+    if (typeof key !== 'string') return false;
+    if (!Array.isArray(value)) return false;
+    if (!value.every(item => typeof item === 'string')) return false;
+  }
+
+  return true;
+}
+
+// Inside your handler:
+let schedule: Record<string, string[]> = {};
+
+if (typeof doctor.schedule === "string") {
+  try {
+    const parsed = JSON.parse(doctor.schedule);
+    if (isValidSchedule(parsed)) {
+      schedule = parsed;
+    } else {
+      console.warn("Doctor schedule is not a valid Record<string, string[]>:", parsed);
+    }
+  } catch (e) {
+    console.error("Failed to parse doctor schedule JSON:", e);
+  }
+} else if (isValidSchedule(doctor.schedule)) {
+  schedule = doctor.schedule;
+} else {
+  console.warn("Doctor schedule is invalid or empty:", doctor.schedule);
+}
+
+    const daySlots = schedule[dayName] || [];
     if (daySlots.length === 0) {
       return res.status(200).json({
         success: true,
@@ -338,27 +367,38 @@ const getDoctorAvailableSlotsByDate = async (req: Request, res: Response) => {
       });
     }
 
-    const parseSlotStartTime = (slot: string): Date => {
-      const timePart = slot.split("-")[0].trim();
-      const [time, modifier] = [timePart.slice(0, -2), timePart.slice(-2)];
-      let [hours, minutes] = time.split(":").map(Number);
+    // Helper: parse end time of a slot (e.g., "09:00AM-12:00PM" → 12:00 PM)
+    const parseSlotEndTime = (slot: string): Date | null => {
+      const parts = slot.split('-').map(p => p.trim());
+      if (parts.length !== 2) return null;
 
-      if (modifier === "PM" && hours !== 12) hours += 12;
-      if (modifier === "AM" && hours === 12) hours = 0;
+      const endTimeStr = parts[1];
+      const match = endTimeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+      if (!match) return null;
 
-      const slotDate = new Date(givenDate);
-      slotDate.setHours(hours, minutes, 0, 0);
-      return slotDate;
+      let [, hoursStr, minutesStr, period] = match;
+      let hours = parseInt(hoursStr, 10);
+      const minutes = parseInt(minutesStr, 10) || 0;
+
+      if (period.toUpperCase() === 'AM' && hours === 12) hours = 0;
+      else if (period.toUpperCase() === 'PM' && hours !== 12) hours += 12;
+
+      const endTime = new Date(givenDate);
+      endTime.setHours(hours, minutes, 0, 0);
+      return endTime;
     };
 
-    let filteredSlots = daySlots;
-    if (givenDate.toDateString() === today.toDateString()) {
-      filteredSlots = daySlots.filter((slot) => {
-        const slotStart = parseSlotStartTime(slot);
-        return slotStart > today;
+    // Filter out slots whose END TIME has already passed (only for today)
+    const now = new Date();
+    let filteredSlots = [...daySlots];
+    if (givenDate.toDateString() === now.toDateString()) {
+      filteredSlots = filteredSlots.filter(slot => {
+        const endTime = parseSlotEndTime(slot);
+        return endTime && endTime > now;
       });
     }
 
+    // Fetch booked appointments for this date
     const startOfDay = new Date(givenDate);
     startOfDay.setHours(0, 0, 0, 0);
     const endOfDay = new Date(givenDate);
@@ -367,23 +407,36 @@ const getDoctorAvailableSlotsByDate = async (req: Request, res: Response) => {
     const bookedAppointments = await prisma.appointment.findMany({
       where: {
         doctorId: id,
-        appointmentDate: {
-          gte: startOfDay,
-          lte: endOfDay,
-        },
+        appointmentDate: { gte: startOfDay, lte: endOfDay },
       },
       select: { slot: true },
     });
 
-    const bookedSlots = bookedAppointments.map((appt) => (appt.slot as string) || "");
+    // Extract booked slots (Prisma already parses Json → no JSON.parse needed!)
+    const bookedSlots: string[] = [];
+    for (const appt of bookedAppointments) {
+      if (typeof appt.slot === "string") {
+        bookedSlots.push(appt.slot);
+      } else if (Array.isArray(appt.slot)) {
+        bookedSlots.push(...appt.slot.map(s => String(s)));
+      } else {
+        bookedSlots.push(String(appt.slot));
+      }
+    }
 
-    const availableSlots = filteredSlots.filter((slot) => !bookedSlots.includes(slot));
+    // Normalize for safe comparison
+    const normalize = (s: string) => s.replace(/\s+/g, '').toUpperCase();
+
+    const availableSlots = filteredSlots.filter(
+      slot => !bookedSlots.some(booked => normalize(booked) === normalize(slot))
+    );
 
     return res.status(200).json({
       success: true,
-      message: `Doctor's available slots for ${dayName} (${date})`,
+      message: `Available slots for ${dayName} (${date})`,
       data: availableSlots,
     });
+
   } catch (error: any) {
     console.error("Error fetching available slots:", error);
     return res.status(500).json({
@@ -396,13 +449,12 @@ const getDoctorAvailableSlotsByDate = async (req: Request, res: Response) => {
 
 const getAllDoctors = async (req: Request, res: Response) => {
   try {
-
     const doctors = await prisma.doctor.findMany({
       select: {
-        id:true,
+        id: true,
         name: true,
-        image:true,
-        gender:true,
+        image: true,
+        gender: true,
         phoneNumber: true,
         specialization: true,
         degree: true,
@@ -481,20 +533,19 @@ const getAvailableDoctorsByDate = async (req: Request, res: Response) => {
     ];
     const dayOfWeek = days[targetDate.getDay()];
 
-    const doctors = await prisma.doctor.findMany({
-      where: {
-        isAvailable: true,
-        schedule: {
-          path: [dayOfWeek], 
-          not: Prisma.JsonNull,
-        },
-      },
-    });
+   const doctors = await prisma.doctor.findMany({
+  where: { isAvailable: true },
+});
+
+const availableDoctors = doctors.filter((doc) => {
+  const schedule = doc.schedule as Record<string, string[]>;
+  return schedule[dayOfWeek] && schedule[dayOfWeek].length > 0;
+});
 
     return res.status(200).json({
       success: true,
       message: `Available doctors for ${dayOfWeek} (${targetDate.toDateString()})`,
-      data: doctors,
+      data: availableDoctors,
     });
   } catch (error: any) {
     console.error("Error fetching available doctors:", error);

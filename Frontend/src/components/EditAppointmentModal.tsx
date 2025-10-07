@@ -8,9 +8,24 @@ interface EditAppointmentModalProps {
   isOpen: boolean;
   onClose: () => void;
   appointment: Appointment;
-  onSave: (updatedData: Partial<Appointment>) => Promise<void>;
+  onSave: (updatedData: Partial<EditAppointmentApiPayload>) => Promise<void>;
 }
 
+interface EditAppointmentApiPayload {
+  patientName?: string;
+  patientEmail?: string;
+  patientPhoneNumber?: string;
+  patientIssue?: string;
+  patientAddress?: string;
+  patientAge?: number;
+  patientGender?: string;
+
+  slot?: string;
+  appointmentDate?: string;
+  visitType?: string;
+  status?: string;
+  paymentStatus?: string;
+}
 const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
   isOpen,
   onClose,
@@ -31,36 +46,40 @@ const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setIsSaving(true);
-  setError(null);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+    setError(null);
 
-  try {
-    await onSave({
-      patient: {
-        name: formData.patientName,
-        email: formData.patientEmail || undefined,
-        phoneNumber: formData.patientPhoneNumber,
-        issue: formData.patientIssue,
-        address: formData.patientAddress || undefined,
-        age: parseInt(formData.patientAge) || 0,
-        gender: formData.patientGender, 
-      },
-    });
-    onClose();
-  } catch (err: any) {
-    setError(err?.message || "Failed to update patient details");
-  } finally {
-    setIsSaving(false);
-  }
-};
+    try {
+      // Flatten the patient data into root-level fields
+      const updatedData = {
+        patientName: formData.patientName,
+        patientEmail: formData.patientEmail || undefined,
+        patientPhoneNumber: formData.patientPhoneNumber,
+        patientIssue: formData.patientIssue,
+        patientAddress: formData.patientAddress || undefined,
+        patientAge: parseInt(formData.patientAge) || 0,
+        patientGender: formData.patientGender,
+        // Add other appointment fields here if needed later (e.g., slot, status)
+      };
+
+      await onSave(updatedData);
+      onClose();
+    } catch (err: unknown) {
+      setError("Failed to update patient details");
+    } finally {
+      setIsSaving(false);
+    }
+  };
   if (!isOpen) return null;
 
   return (
@@ -68,7 +87,10 @@ const handleSubmit = async (e: React.FormEvent) => {
       <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="p-4 border-b flex justify-between items-center">
           <h2 className="text-xl font-bold">Edit Patient Details</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>

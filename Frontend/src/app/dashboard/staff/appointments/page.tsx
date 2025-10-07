@@ -73,30 +73,47 @@ const AppointmentPage = () => {
     );
   });
 
-  const handleSaveEdit = async (updatedData: Partial<Appointment>) => {
-    if (!editingAppointment) return;
+const handleSaveEdit = async (updatedData: any) => {
+  if (!editingAppointment) return;
 
-    try {
-      const response = await axios.put(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/appointment/edit/${editingAppointment.id}`,
-        updatedData,
-        { withCredentials: true }
+  // If the payload contains a nested `patient` object, flatten it
+  let payload = updatedData;
+
+  if (updatedData.patient) {
+    payload = {
+      patientName: updatedData.patient.name,
+      patientEmail: updatedData.patient.email,
+      patientPhoneNumber: updatedData.patient.phoneNumber,
+      patientIssue: updatedData.patient.issue,
+      patientAddress: updatedData.patient.address,
+      patientAge: updatedData.patient.age,
+      patientGender: updatedData.patient.gender,
+      // Add other top-level appointment fields if needed later (e.g., slot, status)
+    };
+  }
+
+  try {
+    const response = await axios.put(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/appointment/edit/${editingAppointment.id}`,
+      payload, // ← now flat!
+      { withCredentials: true }
+    );
+
+    if (response.data.appointment) {
+      setAppointments((prev) =>
+        prev.map((appt) =>
+          appt.id === editingAppointment.id
+            ? { ...appt, ...response.data.appointment }
+            : appt
+        )
       );
-
-      if (response.data.appointment) {
-        setAppointments((prev) =>
-          prev.map((appt) =>
-            appt.id === editingAppointment.id
-              ? { ...appt, ...response.data.appointment }
-              : appt
-          )
-        );
-        setEditingAppointment(null);
-      }
-    } catch (error: unknown) {
-      alert("Failed to update appointment. Please try again.");
+      setEditingAppointment(null);
     }
-  };
+  } catch (error: unknown) {
+    console.error("Edit error:", error);
+    alert("Failed to update appointment. Please try again.");
+  }
+};
 
   return (
     <div className="p-4 sm:p-6 space-y-6 bg-gray-50 min-h-screen text-gray-900">

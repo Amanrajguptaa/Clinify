@@ -52,7 +52,7 @@ const handleSubmit = async () => {
     );
     onClose();
   } catch (error: unknown) {
-    console.error("Failed to schedule appointment");
+    console.error("Failed to schedule appointment",error);
   }
 };
 
