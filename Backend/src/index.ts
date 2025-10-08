@@ -7,6 +7,7 @@ import doctorRouter from "./routes/doctor.route";
 import appointmentRouter from "./routes/appointment.route";
 import connectCloudinary from "./utils/cloudinary";
 import queueRoter from "./routes/queue.route";
+import dashboardRouter from "./routes/dashboard.route";
 
 const app = express();
 
@@ -37,3 +38,4 @@ app.use("/api/auth", authRouter);
 app.use("/api/doctor", doctorRouter);
 app.use("/api/appointment", appointmentRouter);
 app.use("/api/queue", queueRoter);
+app.use("/api/dashboard", dashboardRouter);
