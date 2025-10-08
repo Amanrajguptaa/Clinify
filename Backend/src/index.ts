@@ -22,7 +22,7 @@ app.use(cors({
 }));
 app.use(cookieParser());
 
-app.listen(8000, "0.0.0.0", () => {
+app.listen(port, "0.0.0.0", () => {
   console.log(`Server running on port ${port}`);
 });
 
