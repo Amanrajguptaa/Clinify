@@ -22,8 +22,8 @@ app.use(cors({
 }));
 app.use(cookieParser());
 
-app.listen(8000, '0.0.0.0', () => {
-  console.log('Server running on 0.0.0.0:8000');
+app.listen(8000, () => {
+  console.log('Server running on localhost:8000');
 });
 
 app.get("/", (req, res) => {
