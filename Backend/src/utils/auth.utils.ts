@@ -59,8 +59,9 @@ export const verifyRefreshToken = async (
     res.cookie("clinifyAccessToken", accessToken, {
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
-  sameSite: "none",
+  sameSite: 'none' as const,
   domain: ".clinify.life",
+  path: "/"
   maxAge: 1000 * 60 * 60 * 24, 
 });
 
@@ -71,8 +72,9 @@ export const verifyRefreshToken = async (
     res.clearCookie("clinifyRefreshToken", {
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
-  sameSite: "none",
+  sameSite: 'none' as const,
   domain: ".clinify.life",
+  path: "/"
 });
     return false;
   }
