@@ -8,6 +8,12 @@ Whether it’s booking appointments, managing doctors, or keeping track of patie
 
 ---
 
+<p align="center">
+  <img src="https://res.cloudinary.com/dkqbawsqm/image/upload/v1759940078/Screenshot_2025-10-08_at_9.42.26_PM_zgz72i.png" alt="Clinify Dashboard" width="100%" />
+</p>
+
+---
+
 ## ✨ Features
 
 ### **Patient & Appointment Management**
@@ -45,19 +51,6 @@ Whether it’s booking appointments, managing doctors, or keeping track of patie
 
 ---
 
-## 🚀 Screenshots
-
-**Dashboard Snapshot**  
-![Dashboard Snapshot](link-to-dashboard-screenshot)  
-
-**Appointment Booking**  
-![Booking Snapshot](link-to-booking-screenshot)  
-
-**Doctor Management**  
-![Doctor Management Snapshot](link-to-doctor-screenshot)  
-
-
----
 
 ## 📦 Deployment
 
