@@ -11,7 +11,7 @@ import dashboardRouter from "./routes/dashboard.route";
 
 const app = express();
 
-const port = process.env.PORT || 4000;
+const port = process.env.PORT ? parseInt(process.env.PORT) : 4000;
 
 connectCloudinary();
 
