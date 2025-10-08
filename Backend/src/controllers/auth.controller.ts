@@ -10,15 +10,15 @@ export const login = async (req: Request, res: Response) => {
 
   res.cookie("clinifyAccessToken", accessToken, {
     httpOnly: true,
-    secure: process.env.NODE_ENV == "production",
-    sameSite: "strict",
+  secure: true,    
+  sameSite: "none",  
     maxAge: 1000 * 60 * 60 * 24,
   });
 
   res.cookie("clinifyRefreshToken", refreshToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV == "production",
-    sameSite: "strict",
+   httpOnly: true,
+  secure: true,    
+  sameSite: "none",  
     maxAge: 1000 * 60 * 60 * 24 * 7,
   });
 
@@ -32,13 +32,13 @@ export const login = async (req: Request, res: Response) => {
 export const logout = async (req: Request, res: Response) => {
   res.clearCookie("clinifyAccessToken", {
     httpOnly: true,
-    secure: process.env.NODE_ENV == "production",
-    sameSite: "strict",
+  secure: true,    
+  sameSite: "none",  
   });
   res.clearCookie("clinifyRefreshToken", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV == "production",
-    sameSite: "strict",
+   httpOnly: true,
+  secure: true,    
+  sameSite: "none",  
   });
 
   res.json({
