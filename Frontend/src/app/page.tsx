@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import Image from "next/image";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 
@@ -52,10 +51,22 @@ const StaffLogin: React.FC = () => {
 
       {/* Decorative Images */}
       <div className="absolute left-24 top-36 rotate-12 pointer-events-none opacity-70 hidden lg:block">
-        <Image src="/syringe.png" alt="" width={260} height={220} />
+        <img
+          src="/syringe.png"
+          alt="Syringe"
+          width={260}
+          height={220}
+          className="pointer-events-none opacity-70 hidden lg:block "
+        />
       </div>
       <div className="absolute right-28 bottom-24 -rotate-12 pointer-events-none opacity-70 hidden lg:block">
-        <Image src="/stethoscope.png" alt="" width={240} height={220} />
+        <img
+          src="/stethoscope.png"
+          alt="Stethoscope"
+          width={240}
+          height={220}
+          className="pointer-events-none opacity-70 hidden lg:block"
+        />
       </div>
 
       {/* Login Card */}
