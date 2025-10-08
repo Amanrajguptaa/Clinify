@@ -61,7 +61,7 @@ export const verifyRefreshToken = async (
   secure: process.env.NODE_ENV === "production",
   sameSite: 'none' as const,
   domain: ".clinify.life",
-  path: "/"
+  path: "/",
   maxAge: 1000 * 60 * 60 * 24, 
 });
 
