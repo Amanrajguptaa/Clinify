@@ -57,20 +57,23 @@ export const verifyRefreshToken = async (
     const isProduction = process.env.NODE_ENV === "production";
 
     res.cookie("clinifyAccessToken", accessToken, {
-      httpOnly: true,
-  secure: true,    
-  sameSite: "none",  
-      maxAge: 1000 * 60 * 60 * 24,
-    });
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "none",
+  domain: ".clinify.life",
+  maxAge: 1000 * 60 * 60 * 24, 
+});
+
 
     next();
     return true;
   } catch (err) {
     res.clearCookie("clinifyRefreshToken", {
-     httpOnly: true,
-  secure: true,    
-  sameSite: "none",  
-    });
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "none",
+  domain: ".clinify.life",
+});
     return false;
   }
 };
