@@ -58,8 +58,8 @@ export const verifyRefreshToken = async (
 
     res.cookie("clinifyAccessToken", accessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+  secure: true,    
+  sameSite: "none",  
       maxAge: 1000 * 60 * 60 * 24,
     });
 
@@ -67,9 +67,9 @@ export const verifyRefreshToken = async (
     return true;
   } catch (err) {
     res.clearCookie("clinifyRefreshToken", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV == "production",
-      sameSite: "strict",
+     httpOnly: true,
+  secure: true,    
+  sameSite: "none",  
     });
     return false;
   }
