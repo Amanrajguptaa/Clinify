@@ -37,6 +37,7 @@ export const logout = async (req: Request, res: Response) => {
     secure: process.env.NODE_ENV === "production",
     sameSite: "none" as const,
     domain: ".clinify.life",
+    path: "/"
   };
 
   res.clearCookie("clinifyAccessToken", cookieOptions);
