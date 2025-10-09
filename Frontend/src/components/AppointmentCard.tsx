@@ -41,7 +41,6 @@ interface AppointmentCardProps {
   onEdit?: (id: string) => void;
   onDelete?: (id: string) => void;
   onReschedule?: (id: string) => void;
-  // Optional: refresh appointments after status update
   onStatusChange?: () => void;
 }
 

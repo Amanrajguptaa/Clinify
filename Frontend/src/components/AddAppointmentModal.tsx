@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { X } from "lucide-react"; // Make sure you have lucide-react installed
+import { X } from "lucide-react";
 import DoctorSelectStep from "./DoctorSelectStep";
 import SlotSelectStep from "./SlotSelectStep";
 import PatientFormStep from "./PatientFormStep";
@@ -9,9 +9,10 @@ import PatientFormStep from "./PatientFormStep";
 interface Props {
   onClose: () => void;
   date: Date;
+  onSuccess?: () => void; 
 }
 
-const AddAppointmentModal: React.FC<Props> = ({ onClose, date }) => {
+const AddAppointmentModal: React.FC<Props> = ({ onClose, date,onSuccess }) => {
   const [step, setStep] = useState(1);
   const [selectedDoctor, setSelectedDoctor] = useState<any>(null);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
@@ -117,6 +118,7 @@ const AddAppointmentModal: React.FC<Props> = ({ onClose, date }) => {
                 slot={selectedSlot}
                 onBack={() => setStep(2)}
                 onClose={onClose}
+                 onSuccess={onSuccess}
               />
             )}
           </div>

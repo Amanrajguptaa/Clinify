@@ -10,6 +10,7 @@ interface Props {
   onBack: () => void;
   onClose: () => void;
   date: Date;
+  onSuccess?: () => void;
 }
 
 const PatientFormStep: React.FC<Props> = ({
@@ -18,6 +19,7 @@ const PatientFormStep: React.FC<Props> = ({
   onBack,
   onClose,
   date,
+  onSuccess
 }) => {
   const [step, setStep] = useState(1);
 
@@ -68,6 +70,7 @@ const PatientFormStep: React.FC<Props> = ({
         },
         { withCredentials: true }
       );
+      onSuccess?.()
       onClose();
     } catch (error) {
       console.error("Failed to schedule appointment", error);

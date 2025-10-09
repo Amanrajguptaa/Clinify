@@ -38,40 +38,40 @@ const AppointmentPage = () => {
     useState<Appointment | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchAppointments = async () => {
-      setLoading(true);
-      try {
-        const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/appointment/all-appointments`,
-          {
-            params: {
-              date:
-                date.getFullYear() +
-                "-" +
-                String(date.getMonth() + 1).padStart(2, "0") +
-                "-" +
-                String(date.getDate()).padStart(2, "0"),
-            },
-            withCredentials: true,
-          }
-        );
+  const fetchAppointments = async () => {
+  setLoading(true);
+  try {
+    const formattedDate = 
+      date.getFullYear() +
+      "-" +
+      String(date.getMonth() + 1).padStart(2, "0") +
+      "-" +
+      String(date.getDate()).padStart(2, "0");
 
-        if (response.data.success) {
-          setAppointments(response.data.data || []);
-        } else {
-          setAppointments([]);
-        }
-      } catch (error) {
-        console.error("Error fetching appointments:", error);
-        setAppointments([]);
-      } finally {
-        setLoading(false);
+    const response = await axios.get(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/appointment/all-appointments`,
+      {
+        params: { date: formattedDate },
+        withCredentials: true,
       }
-    };
+    );
 
-    fetchAppointments();
-  }, [date]);
+    if (response.data.success) {
+      setAppointments(response.data.data || []);
+    } else {
+      setAppointments([]);
+    }
+  } catch (error) {
+    console.error("Error fetching appointments:", error);
+    setAppointments([]);
+  } finally {
+    setLoading(false);
+  }
+};
+
+useEffect(() => {
+  fetchAppointments();
+}, [date]);
 
   const filteredAppointments = appointments.filter((a) => {
     const doctorName = a.doctor?.name || "";
@@ -92,6 +92,8 @@ const AppointmentPage = () => {
         updatedData,
         { withCredentials: true }
       );
+      setEditingAppointment(null);
+    fetchAppointments();
 
       if (response.data.appointment) {
         setAppointments((prev) =>
@@ -213,9 +215,12 @@ const AppointmentPage = () => {
 
       {/* Modals */}
       {showModal && (
-        <AddAppointmentModal onClose={() => setShowModal(false)} date={date} />
-      )}
-
+  <AddAppointmentModal
+    onClose={() => setShowModal(false)}
+    date={date}
+    onSuccess={() => fetchAppointments()} 
+  />
+)}
       {editingAppointment && (
         <EditAppointmentModal
           isOpen={true}
@@ -229,7 +234,7 @@ const AppointmentPage = () => {
         <RescheduleAppointmentModal
           isOpen={true}
           onClose={() => setReschedulingAppointment(null)}
-          onSuccess={() => {}}
+          onSuccess={() => fetchAppointments()}
           appointment={reschedulingAppointment}
         />
       )}
