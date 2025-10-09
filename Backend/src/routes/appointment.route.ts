@@ -5,7 +5,7 @@ import { changeAppointmentStatus, deleteAppointment, editAppointment, getAllDoct
 const appointmentRouter = express.Router ();
 
 appointmentRouter.post ('/schedule', authenticateUser, requiresRole(["STAFF"]),scheduleAppointment)
-appointmentRouter.post ('/reschedule', authenticateUser, requiresRole(["STAFF"]),rescheduleAppointment)
+appointmentRouter.post ('/reschedule/:id', authenticateUser, requiresRole(["STAFF"]),rescheduleAppointment)
 appointmentRouter.get ('/all-appointments', authenticateUser, requiresRole(["STAFF"]),getAllDoctorAppointments)
 appointmentRouter.put ('/edit/:id', authenticateUser, requiresRole(["STAFF"]),editAppointment)
 appointmentRouter.put ('/status/:id', authenticateUser, requiresRole(["STAFF"]),changeAppointmentStatus)

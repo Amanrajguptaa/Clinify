@@ -6,10 +6,10 @@ import { Search, Plus, Clock, Calendar as CalendarIcon } from "lucide-react";
 import AddAppointmentModal from "@/components/AddAppointmentModal";
 import AppointmentCard from "@/components/AppointmentCard";
 import EditAppointmentModal from "@/components/EditAppointmentModal";
+import RescheduleAppointmentModal from "@/components/RescheduleAppointmentModal";
 import { Appointment } from "@/components/AppointmentCard";
 import axios from "axios";
 
-// ====== SHIMMER SKELETON ======
 const AppointmentSkeleton = () => (
   <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm animate-pulse h-56">
     <div className="flex justify-between items-start mb-3">
@@ -32,6 +32,8 @@ const AppointmentPage = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [reschedulingAppointment, setReschedulingAppointment] =
+    useState<Appointment | null>(null);
   const [editingAppointment, setEditingAppointment] =
     useState<Appointment | null>(null);
   const [loading, setLoading] = useState(true);
@@ -177,6 +179,10 @@ const AppointmentPage = () => {
                         const apt = appointments.find((a) => a.id === id);
                         if (apt) setEditingAppointment(apt);
                       }}
+                      onReschedule={(id) => {
+                        const apt = appointments.find((a) => a.id === id);
+                        if (apt) setReschedulingAppointment(apt);
+                      }}
                     />
                   </div>
                 ))}
@@ -216,6 +222,15 @@ const AppointmentPage = () => {
           onClose={() => setEditingAppointment(null)}
           appointment={editingAppointment}
           onSave={handleSaveEdit}
+        />
+      )}
+
+      {reschedulingAppointment && (
+        <RescheduleAppointmentModal
+          isOpen={true}
+          onClose={() => setReschedulingAppointment(null)}
+          onSuccess={() => {}}
+          appointment={reschedulingAppointment}
         />
       )}
     </div>

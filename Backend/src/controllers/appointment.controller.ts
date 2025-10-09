@@ -108,7 +108,9 @@ const scheduleAppointment = async (req: Request, res: Response) => {
     }
 
     if (!existingDoctor.isAvailable) {
-      return res.status(200).json({ message: "Doctor is currently not available" });
+      return res
+        .status(200)
+        .json({ message: "Doctor is currently not available" });
     }
 
     const apptDate = new Date(appointmentDate);
@@ -116,7 +118,9 @@ const scheduleAppointment = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Invalid appointment date" });
     }
 
-    const dayKey = apptDate.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase();
+    const dayKey = apptDate
+      .toLocaleDateString("en-US", { weekday: "long" })
+      .toUpperCase();
 
     // Normalize doctor schedule keys to uppercase to avoid casing issues
     const rawSchedule = existingDoctor.schedule as Record<string, unknown>;
@@ -131,7 +135,10 @@ const scheduleAppointment = async (req: Request, res: Response) => {
 
     const isSlotValid = daySchedule.some((range) => isOverlap(range, slot));
     if (!isSlotValid) {
-      console.log("Debug - Doctor schedule keys:", Object.keys(normalizedSchedule));
+      console.log(
+        "Debug - Doctor schedule keys:",
+        Object.keys(normalizedSchedule)
+      );
       console.log("Debug - Requested day:", dayKey);
       console.log("Debug - Available slots:", daySchedule);
       console.log("Debug - Requested slot:", slot);
@@ -159,7 +166,9 @@ const scheduleAppointment = async (req: Request, res: Response) => {
       isOverlap(appt.slot as string, slot)
     );
     if (isDoubleBooked) {
-      return res.status(400).json({ message: "Selected slot is already booked" });
+      return res
+        .status(400)
+        .json({ message: "Selected slot is already booked" });
     }
 
     let patient = await prisma.patient.findUnique({
@@ -231,8 +240,6 @@ const scheduleAppointment = async (req: Request, res: Response) => {
 
 const getAllDoctorAppointments = async (req: Request, res: Response) => {
   try {
-    console.log("✅ getAllAppointment v2 is running!");
-
     const { date } = req.query;
     if (!date) {
       return res.status(400).json({ message: "date is required" });
@@ -444,12 +451,18 @@ const rescheduleAppointment = async (req: Request, res: Response) => {
         .status(400)
         .json({ message: "Doctor not available in this slot" });
 
+    const startOfDay = new Date(appointmentDate);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(appointmentDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
     const sameDayAppointments = await prisma.appointment.findMany({
       where: {
         doctorId: doctor.id,
         appointmentDate: {
-          gte: new Date(date.setHours(0, 0, 0, 0)),
-          lte: new Date(date.setHours(23, 59, 59, 999)),
+          gte: startOfDay,
+          lte: endOfDay,
         },
         NOT: { id },
       },
@@ -550,11 +563,16 @@ const changeAppointmentStatus = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { status } = req.body;
 
-    const validStatuses: AppointmentStatus[] = ['PENDING', 'COMPLETED', 'CANCELLED'];
+    const validStatuses: AppointmentStatus[] = [
+      "PENDING",
+      "COMPLETED",
+      "CANCELLED",
+    ];
     if (!status || !validStatuses.includes(status)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid or missing appointment status. Must be one of: PENDING, COMPLETED, CANCELLED',
+        message:
+          "Invalid or missing appointment status. Must be one of: PENDING, COMPLETED, CANCELLED",
       });
     }
 
@@ -565,7 +583,7 @@ const changeAppointmentStatus = async (req: Request, res: Response) => {
     if (!existingAppointment) {
       return res.status(404).json({
         success: false,
-        message: 'Appointment not found',
+        message: "Appointment not found",
       });
     }
     const updatedAppointment = await prisma.appointment.update({
@@ -582,14 +600,14 @@ const changeAppointmentStatus = async (req: Request, res: Response) => {
 
     return res.status(200).json({
       success: true,
-      message: 'Appointment status updated successfully',
+      message: "Appointment status updated successfully",
       data: updatedAppointment,
     });
   } catch (error) {
-    console.error('Error updating appointment status:', error);
+    console.error("Error updating appointment status:", error);
     return res.status(500).json({
       success: false,
-      message: 'Internal server error',
+      message: "Internal server error",
     });
   }
 };
@@ -602,5 +620,5 @@ export {
   getAllDoctorAppointments,
   getAppointmentById,
   getDoctorAppointment,
-  changeAppointmentStatus
+  changeAppointmentStatus,
 };

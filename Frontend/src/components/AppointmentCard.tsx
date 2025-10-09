@@ -15,6 +15,7 @@ import {
 export interface Appointment {
   id: string;
   doctor: {
+    id:string
     name: string;
     specialization: string;
     fees: number;
