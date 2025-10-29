@@ -171,10 +171,11 @@ const scheduleAppointment = async (req: Request, res: Response) => {
         .json({ message: "Selected slot is already booked" });
     }
 
-    let patient = await prisma.patient.findUnique({
-      where: { phoneNumber: patientPhoneNumber },
+    let patient = await prisma.patient.findFirst({
+      where: {
+        OR: [{ phoneNumber: patientPhoneNumber }, { email: patientEmail }],
+      },
     });
-
     if (!patient) {
       patient = await prisma.patient.create({
         data: {
@@ -235,6 +236,7 @@ const scheduleAppointment = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error in scheduleAppointment:", error);
     return res.status(500).json({ message: "Something went wrong" });
+    console.log(error);
   }
 };
 
@@ -276,6 +278,8 @@ const getAllDoctorAppointments = async (req: Request, res: Response) => {
             age: true,
             gender: true,
             issue: true,
+            address: true,
+            email: true,
           },
         },
       },

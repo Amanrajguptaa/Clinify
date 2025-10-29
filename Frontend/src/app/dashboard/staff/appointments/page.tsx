@@ -9,6 +9,7 @@ import EditAppointmentModal from "@/components/EditAppointmentModal";
 import RescheduleAppointmentModal from "@/components/RescheduleAppointmentModal";
 import { Appointment } from "@/components/AppointmentCard";
 import axios from "axios";
+import { toast } from "react-toastify";
 
 const AppointmentSkeleton = () => (
   <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm animate-pulse h-56">
@@ -39,39 +40,49 @@ const AppointmentPage = () => {
   const [loading, setLoading] = useState(true);
 
   const fetchAppointments = async () => {
-  setLoading(true);
-  try {
-    const formattedDate = 
-      date.getFullYear() +
-      "-" +
-      String(date.getMonth() + 1).padStart(2, "0") +
-      "-" +
-      String(date.getDate()).padStart(2, "0");
+    setLoading(true);
+    try {
+      const formattedDate =
+        date.getFullYear() +
+        "-" +
+        String(date.getMonth() + 1).padStart(2, "0") +
+        "-" +
+        String(date.getDate()).padStart(2, "0");
 
-    const response = await axios.get(
-      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/appointment/all-appointments`,
-      {
-        params: { date: formattedDate },
-        withCredentials: true,
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/appointment/all-appointments`,
+        {
+          params: { date: formattedDate },
+          withCredentials: true,
+        }
+      );
+
+      if (response.data.success) {
+        setAppointments(response.data.data || []);
+      } else {
+        setAppointments([]);
       }
-    );
-
-    if (response.data.success) {
-      setAppointments(response.data.data || []);
-    } else {
+    } catch (error) {
+      console.error("Error fetching appointments:", error);
       setAppointments([]);
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error("Error fetching appointments:", error);
-    setAppointments([]);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
-useEffect(() => {
-  fetchAppointments();
-}, [date]);
+  const handleScheduleAppointments = async () => {
+    toast.success("Appointment Scheduled 🎉");
+    fetchAppointments();
+  };
+
+    const handleRescheduleAppointments = async () => {
+    toast.success("Appointment Rescheduled 🗓️");
+    fetchAppointments();
+  };
+
+  useEffect(() => {
+    fetchAppointments();
+  }, [date]);
 
   const filteredAppointments = appointments.filter((a) => {
     const doctorName = a.doctor?.name || "";
@@ -93,7 +104,9 @@ useEffect(() => {
         { withCredentials: true }
       );
       setEditingAppointment(null);
-    fetchAppointments();
+      toast.success("Appointment Edited 🎉");
+
+      fetchAppointments();
 
       if (response.data.appointment) {
         setAppointments((prev) =>
@@ -185,6 +198,7 @@ useEffect(() => {
                         const apt = appointments.find((a) => a.id === id);
                         if (apt) setReschedulingAppointment(apt);
                       }}
+                      onSuccess={()=>fetchAppointments()}
                     />
                   </div>
                 ))}
@@ -215,12 +229,12 @@ useEffect(() => {
 
       {/* Modals */}
       {showModal && (
-  <AddAppointmentModal
-    onClose={() => setShowModal(false)}
-    date={date}
-    onSuccess={() => fetchAppointments()} 
-  />
-)}
+        <AddAppointmentModal
+          onClose={() => setShowModal(false)}
+          date={date}
+          onSuccess={handleScheduleAppointments}
+        />
+      )}
       {editingAppointment && (
         <EditAppointmentModal
           isOpen={true}
@@ -234,7 +248,7 @@ useEffect(() => {
         <RescheduleAppointmentModal
           isOpen={true}
           onClose={() => setReschedulingAppointment(null)}
-          onSuccess={() => fetchAppointments()}
+          onSuccess={handleRescheduleAppointments}
           appointment={reschedulingAppointment}
         />
       )}

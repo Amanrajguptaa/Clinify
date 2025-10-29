@@ -1,6 +1,4 @@
-"use client";
-
-import React from "react";
+import React, { useState } from "react";
 import axios from "axios";
 import {
   Calendar,
@@ -11,11 +9,12 @@ import {
   Trash2,
   RotateCcw,
 } from "lucide-react";
+import { toast } from "react-toastify";
 
 export interface Appointment {
   id: string;
   doctor: {
-    id:string
+    id: string;
     name: string;
     specialization: string;
     fees: number;
@@ -42,6 +41,7 @@ interface AppointmentCardProps {
   onDelete?: (id: string) => void;
   onReschedule?: (id: string) => void;
   onStatusChange?: () => void;
+  onSuccess: () => void;
 }
 
 const AppointmentCard: React.FC<AppointmentCardProps> = ({
@@ -50,7 +50,11 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({
   onDelete,
   onReschedule,
   onStatusChange,
+  onSuccess,
 }) => {
+const [loadingComplete, setLoadingComplete] = useState(false);
+const [loadingCancel, setLoadingCancel] = useState(false);
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "PENDING":
@@ -72,28 +76,34 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({
       : "bg-red-100 text-red-800";
   };
 
-  const handleStatusUpdate = async (newStatus: "COMPLETED" | "CANCELLED") => {
-    try {
-      const response = await axios.put(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/appointment/status/${data.id}`,
-        { status: newStatus },
-        {
-          withCredentials: true, // sends cookies (for auth)
-        }
-      );
+const handleStatusUpdate = async (newStatus: "COMPLETED" | "CANCELLED") => {
+  try {
+    if (newStatus === "COMPLETED") setLoadingComplete(true);
+    if (newStatus === "CANCELLED") setLoadingCancel(true);
 
-      if (response.status === 200) {
-        onStatusChange?.();
-        console.log("Status updated successfully");
-      }
-    } catch (error) {
-      console.error("Failed to update appointment status:", error);
+    const response = await axios.put(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/appointment/status/${data.id}`,
+      { status: newStatus },
+      { withCredentials: true }
+    );
+
+    if (response.status === 200) {
+      onStatusChange?.();
+      toast.success(response?.data?.message || "Status updated successfully!");
+      onSuccess();
     }
-  };
+  } catch (error: any) {
+    toast.error(error.response?.data?.message || "Failed to update appointment status");
+    console.error("Failed to update appointment status:", error);
+  } finally {
+    if (newStatus === "COMPLETED") setLoadingComplete(false);
+    if (newStatus === "CANCELLED") setLoadingCancel(false);
+  }
+};
+
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-400 overflow-hidden duration-300">
-      {/* Header with Doctor Info */}
       <div className="bg-blue-600/70 p-4">
         <div className="flex flex-col items-start justify-center">
           <div>
@@ -126,13 +136,35 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({
             {data.status !== "COMPLETED" && data.status !== "CANCELLED" && (
               <button
                 onClick={() => handleStatusUpdate("COMPLETED")}
-                className="cursor-pointer text-white bg-green-500 hover:bg-green-600 px-2 py-1 rounded-full text-xs transition-colors"
+                className="cursor-pointer text-white bg-green-500 hover:bg-green-600 px-2 py-1 rounded-full text-xs transition-colors flex items-center gap-1"
+                disabled={loadingComplete}
               >
-                Mark Complete
+                {loadingComplete ? (
+                  <svg
+                    className="animate-spin h-4 w-4 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v8H4z"
+                    ></path>
+                  </svg>
+                ) : (
+                  "Mark Complete"
+                )}
               </button>
             )}
-
-          
           </div>
         </div>
       </div>
@@ -169,37 +201,62 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({
       </div>
 
       {/* Action Buttons */}
-      <div className="px-4 pb-4 flex justify-between text-xs">
-        <button
-          onClick={() => onEdit?.(data.id)}
-          className="cursor-pointer flex items-center gap-1 text-blue-600 hover:text-blue-800 transition-colors"
-          title="Edit"
-        >
-          <Edit className="w-4 h-4" />
-          <span>Edit</span>
-        </button>
+      {data?.status !== "COMPLETED" && data?.status !== "CANCELLED" && (
+        <div className="px-4 pb-4 flex justify-between text-xs">
+          <button
+            onClick={() => onEdit?.(data.id)}
+            className="cursor-pointer flex items-center gap-1 text-blue-600 hover:text-blue-800 transition-colors"
+            title="Edit"
+          >
+            <Edit className="w-4 h-4" />
+            <span>Edit</span>
+          </button>
 
-        <button
-          onClick={() => onReschedule?.(data.id)}
-          className="cursor-pointer flex items-center gap-1 text-purple-600 hover:text-purple-800 transition-colors"
-          title="Reschedule"
-        >
-          <RotateCcw className="w-4 h-4" />
-          <span>Reschedule</span>
-        </button>
+          <button
+            onClick={() => onReschedule?.(data.id)}
+            className="cursor-pointer flex items-center gap-1 text-purple-600 hover:text-purple-800 transition-colors"
+            title="Reschedule"
+          >
+            <RotateCcw className="w-4 h-4" />
+            <span>Reschedule</span>
+          </button>
 
-        
-        <button
-                          onClick={() => handleStatusUpdate("CANCELLED")}
-
-          className="cursor-pointer flex items-center gap-1 text-red-600 hover:text-red-800 transition-colors"
-          title="Delete"
-        >
-          <Trash2 className="w-4 h-4" />
-          <span>Cancel</span>
-        </button>
-       
-      </div>
+          <button
+            onClick={() => handleStatusUpdate("CANCELLED")}
+            className="cursor-pointer flex items-center gap-1 text-red-600 hover:text-red-800 transition-colors"
+            title="Cancel"
+            disabled={loadingCancel}
+          >
+            {loadingCancel ? (
+              <svg
+                className="animate-spin h-4 w-4 text-red-600"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v8H4z"
+                ></path>
+              </svg>
+            ) : (
+              <>
+                <Trash2 className="w-4 h-4" />
+                <span>Cancel</span>
+              </>
+            )}
+          </button>
+        </div>
+      )}
     </div>
   );
 };

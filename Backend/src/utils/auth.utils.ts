@@ -94,7 +94,7 @@ export const generateAccessToken = (id: string, role: string): string => {
     { id, role },
     ACCESS_SECRET as unknown as string,
     {
-      expiresIn: "15m",
+      expiresIn: "1d",
     }
   );
 

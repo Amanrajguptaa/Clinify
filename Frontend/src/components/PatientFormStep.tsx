@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { ArrowLeft } from "lucide-react"; 
+import { toast } from "react-toastify";
 
 interface Props {
   doctor: { id: string; name: string };
@@ -36,7 +37,7 @@ const PatientFormStep: React.FC<Props> = ({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async () => {
+ const handleSubmit = async () => {
     if (
       !form.name ||
       !form.email ||
@@ -44,21 +45,25 @@ const PatientFormStep: React.FC<Props> = ({
       !form.age ||
       form.gender === "Not Selected"
     ) {
+      toast.warn("Please fill in all required fields before proceeding.");
       return;
     }
 
     setIsSubmitting(true);
     try {
-    
- const scheduleDate= date.getFullYear() + '-' +
-        String(date.getMonth() + 1).padStart(2, '0') + '-' +
-        String(date.getDate()).padStart(2, '0')
-      await axios.post(
+      const scheduleDate =
+        date.getFullYear() +
+        "-" +
+        String(date.getMonth() + 1).padStart(2, "0") +
+        "-" +
+        String(date.getDate()).padStart(2, "0");
+
+      const res = await axios.post(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/appointment/schedule`,
         {
           doctorId: doctor.id,
           slot,
-          appointmentDate: scheduleDate, 
+          appointmentDate: scheduleDate,
           visitType: form.visitType,
           patientName: form.name,
           patientEmail: form.email,
@@ -70,11 +75,15 @@ const PatientFormStep: React.FC<Props> = ({
         },
         { withCredentials: true }
       );
-      onSuccess?.()
+
+      onSuccess?.();
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to schedule appointment", error);
-      // Consider showing user-friendly error (e.g., toast)
+      const errMsg =
+        error.response?.data?.message ||
+        "Failed to schedule appointment. Please try again later.";
+      toast.error(errMsg);
     } finally {
       setIsSubmitting(false);
     }

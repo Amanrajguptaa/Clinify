@@ -574,7 +574,7 @@ const Page = () => {
                   <p className="text-sm text-gray-500 mb-6">
                     {step === 1 && "Basic Information"}
                     {step === 2 && "Contact & Professional Details"}
-                    {step === 3 && "Schedule & Availability"}
+                    {step === 3 && "Schedule & Availability (Optional)"}
                   </p>
 
                   {/* Progress Indicator */}
