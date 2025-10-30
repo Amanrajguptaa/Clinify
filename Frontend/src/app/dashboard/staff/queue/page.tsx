@@ -240,7 +240,7 @@ const DoctorsQueuePage = () => {
                             Patient
                           </th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                            Slot
+                            Age/Gender
                           </th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                             Visit Type
@@ -276,7 +276,7 @@ const DoctorsQueuePage = () => {
                               {appointment.patient.name}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-gray-600">
-                              {appointment.slot}
+                              {appointment.patient.age}/{appointment.patient.gender}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-gray-600">
                               {appointment.visitType}
