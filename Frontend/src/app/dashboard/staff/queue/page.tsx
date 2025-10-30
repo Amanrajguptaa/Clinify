@@ -276,7 +276,8 @@ const DoctorsQueuePage = () => {
                               {appointment.patient.name}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-gray-600">
-                              {appointment.patient.age}/{appointment.patient.gender}
+                              {appointment.patient.age} /{" "}
+                              {appointment.patient.gender.charAt(0)}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-gray-600">
                               {appointment.visitType}
