@@ -187,6 +187,7 @@ const handleStatusUpdate = async (newStatus: "COMPLETED" | "CANCELLED") => {
               year: "numeric",
               month: "short",
               day: "numeric",
+              timeZone: "UTC",
             })}
           </div>
           <div className="flex items-center gap-2">
