@@ -29,7 +29,7 @@ const DoctorCard: React.FC<DoctorCardProps> = ({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isToggling, setIsToggling] = useState(false); // New state for toggle loading
 
-  const toggleAvailability = async () => {
+  const toggleAvailability = async (id:string) => {
     if (isToggling) return;
     setIsToggling(true);
     const newStatus = !available;
@@ -134,7 +134,7 @@ const DoctorCard: React.FC<DoctorCardProps> = ({
             </span>
 
             <div
-              onClick={toggleAvailability}
+              onClick={()=>toggleAvailability(id)}
               className={`relative inline-flex h-5 w-10 items-center rounded-full cursor-pointer transition-all shadow-sm ${
                 available ? "bg-green-500" : "bg-gray-400"
               } ${isToggling ? "opacity-70 cursor-not-allowed" : ""}`}
